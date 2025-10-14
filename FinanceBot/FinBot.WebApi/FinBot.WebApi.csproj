@@ -6,4 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\FinBot.Domain\FinBot.Domain.csproj" />
+    </ItemGroup>
+
 </Project>
