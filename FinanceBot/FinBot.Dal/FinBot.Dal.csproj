@@ -10,6 +10,7 @@
       <Folder Include="Configurations\" />
       <Folder Include="DbContext\" />
       <Folder Include="Migrations\" />
+      <Folder Include="Telegram\" />
     </ItemGroup>
 
 </Project>
