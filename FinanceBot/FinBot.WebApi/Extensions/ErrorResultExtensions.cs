@@ -33,7 +33,7 @@ public static class ErrorResultExtensions
 
     /// <summary>
     /// Converts a non-generic <see cref="Result"/> with an error to a corresponding <see cref="IActionResult"/>.
-    /// </summary>
+    /// </summary>  
     /// <param name="result">The failed result object.</param>
     /// <returns>An <see cref="IActionResult"/> with the appropriate status code and error message.</returns>
     public static IActionResult ToErrorHttpResult(this Result result)
