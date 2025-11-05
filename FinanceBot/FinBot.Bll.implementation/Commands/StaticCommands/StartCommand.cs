@@ -4,7 +4,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace FinBot.Bll.implementation.Requests.Commands.StaticCommands;
+namespace FinBot.Bll.implementation.Commands.StaticCommands;
 
 [SlashCommand("/start")]
 [TextCommand("Начать")]

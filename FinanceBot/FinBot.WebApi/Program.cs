@@ -1,9 +1,6 @@
-using System.Reflection;
 using FinBot.Bll.implementation.Handlers;
 using FinBot.Bll.implementation.Requests;
-using FinBot.Bll.implementation.Requests.Commands.StaticCommands;
-using FinBot.Bll.Interfaces.TelegramCommands;
-using FinBot.Domain.Attributes;
+using FinBot.WebApi.Extensions;
 using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -16,25 +13,9 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblyContaining<TelegramUpdateRequestHandler>();
 });
-var commandTypes = typeof(StartCommand)
-    .Assembly
-    .GetTypes()
-    .Where(t =>
-        t.IsAssignableTo(typeof(IStaticCommand)));
-foreach (var commandType in commandTypes)
-{
-    builder.Services.AddTransient(typeof(IStaticCommand), commandType);
-}
-builder.Services.AddSingleton<Dictionary<string, IStaticCommand>>(sp =>
-{
-    return sp
-        .GetKeyedServices<IStaticCommand>(null)
-        .Where(command => command.GetType().GetCustomAttribute<SlashCommandAttribute>() != null)
-        .ToDictionary(k => k
-            .GetType()
-            .GetCustomAttribute<SlashCommandAttribute>()!.Command,
-            v => v);
-});
+
+builder.Services.AddStaticCommands();
+builder.Services.AddRegExpCommands();
 
 var app = builder.Build();
 
@@ -44,9 +25,9 @@ app.MapGet("/bot/set-webhook", async (ITelegramBotClient botClient) =>
     return Results.Ok($"webhook set to {webHookUrl}");
 });
 
-app.MapPost("/bot", async (IMediator mediator, Update update) =>
+app.MapPost("/bot", async (IMediator mediator, Update update, CancellationToken cancellationToken) =>
 {
-    await mediator.Send(new ProcessTelegramUpdateRequest(update));
+    await mediator.Send(new ProcessTelegramUpdateRequest(update), cancellationToken);
 });
 
 app.Run();
