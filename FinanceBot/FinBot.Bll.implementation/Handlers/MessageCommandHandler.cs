@@ -20,11 +20,9 @@ public class MessageCommandHandler(
         }
 
         var expPattern = regExpCommands.Keys.FirstOrDefault(pattern => Regex.IsMatch(message.Text!, pattern));
-        if (expPattern != null)
-        {
-            await regExpCommands[expPattern].Handle(message);
-            return Result.Success();
-        }
-        return Result.Failure("Unknown command", ErrorType.NotFound);
+        if (expPattern == null) 
+            return Result.Failure("Unknown command", ErrorType.NotFound);
+        await regExpCommands[expPattern].Handle(message);
+        return Result.Success();
     }
 }

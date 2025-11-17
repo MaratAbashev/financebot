@@ -1,5 +1,6 @@
 ﻿using FinBot.Bll.Interfaces.TelegramCommands;
 using FinBot.Domain.Attributes;
+using FinBot.Domain.Utils;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -10,10 +11,12 @@ namespace FinBot.Bll.implementation.Commands.StaticCommands;
 [TextCommand("Начать")]
 public class StartCommand(ITelegramBotClient botClient): IStaticCommand
 {
-    private readonly ReplyKeyboardMarkup _markup = new(new KeyboardButton("Начать"));
+    private readonly ReplyKeyboardMarkup _markup = ReplyKeyboardBuilder
+        .CreateKeyboard("Начать")
+        .AddKeyboardRow("Помощь")
+        .BuildKeyboardMarkup();
     public async Task Handle(Message message)
     {
-        ReplyKeyboardMarkup replyKeyboardMarkup = new();
         await botClient.SendMessage(message.Chat.Id, 
             "Привет, я бот-помощник с финансами. Давай начнем работу",
             replyMarkup: _markup

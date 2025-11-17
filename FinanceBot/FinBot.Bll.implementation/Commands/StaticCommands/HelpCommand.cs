@@ -7,6 +7,7 @@ using Telegram.Bot.Types.Enums;
 namespace FinBot.Bll.implementation.Commands.StaticCommands;
 
 [SlashCommand("/help")]
+[TextCommand("Помощь")]
 public class HelpCommand(ITelegramBotClient botClient): IStaticCommand
 {
     public async Task Handle(Message message)
