@@ -1,0 +1,48 @@
+using FinBot.Domain.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace FinBot.Dal.Configurations;
+
+public class AccountConfiguration : IEntityTypeConfiguration<Account>
+{
+    public void Configure(EntityTypeBuilder<Account> builder)
+    {
+        builder.HasKey(a => a.Id);
+
+        builder.Property(a => a.Role)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.Property(a => a.SavingStrategy)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.Property(a => a.Balance)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0);
+
+        builder.OwnsOne(a => a.DailyAllocation, allocation =>
+        {
+            allocation.Property(al => al.FlatAllocation)
+                .HasColumnName("allocation_flat")
+                .HasPrecision(18, 2);
+
+            allocation.Property(al => al.WeightenedAllocation)
+                .HasColumnName("allocation_weight");
+        });
+
+        // Связи
+        builder.HasOne(a => a.User)
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(a => a.Group)
+            .WithMany(g => g.Accounts)
+            .HasForeignKey(a => a.GroupId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
