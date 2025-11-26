@@ -1,15 +1,19 @@
+using FinBot.Domain.Utils;
+
 namespace FinBot.Domain.Models;
 
-public class Account
+public class Account : IBusinessEntity<int>
 {
-    public Guid Id { get; set; }
-    public required string Name { get; set; }
+    public int Id { get; set; }
+    public Role Role { get; set; }
+    public required Allocation DailyAllocation { get; set; }
+    public SavingStrategy SavingStrategy { get; set; }
     
     public decimal Balance { get; set; }
-    
-    public Guid OwnerId { get; set; }
-    public User? Owner { get; set; }
-    
+
+    public Guid UserId { get; set; }
+    public User? User { get; set; }
+
     public Guid GroupId { get; set; }
     public Group? Group { get; set; }
 }

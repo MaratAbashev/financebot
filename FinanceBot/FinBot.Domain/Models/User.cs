@@ -8,19 +8,14 @@ namespace FinBot.Domain.Models;
 public class User : IBusinessEntity<Guid>
 {
     /// <summary>
-    /// Числовой id бд
+    /// Guid id бд
     /// </summary>
     public Guid Id { get; set; }
     
     /// <summary>
     /// Числовой id telegram
     /// </summary>
-    public int TelegramId { get; set; }
-    
-    /// <summary>
-    /// Имя пользователя телеграм через @
-    /// </summary>
-    public required string Username { get; set; }
+    public long TelegramId { get; set; }
     
     /// <summary>
     /// Отображаемое имя пользователя
