@@ -1,8 +1,8 @@
-﻿using FinBot.Bll.implementation.Requests;
+﻿using FinBot.Bll.Implementation.Requests;
 using FinBot.Domain.Utils;
 using MediatR;
 
-namespace FinBot.Bll.implementation.Handlers;
+namespace FinBot.Bll.Implementation.Handlers;
 
 public class TelegramUpdateRequestHandler(IMediator mediator): IRequestHandler<ProcessTelegramUpdateRequest>
 {

@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using FinBot.Bll.implementation.Commands.StaticCommands;
+using FinBot.Bll.Implementation.Commands.StaticCommands;
 using FinBot.Bll.Interfaces.TelegramCommands;
 using FinBot.Domain.Attributes;
 

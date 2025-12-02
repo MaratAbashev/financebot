@@ -4,7 +4,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace FinBot.Bll.implementation.Commands.StaticCommands;
+namespace FinBot.Bll.Implementation.Commands.StaticCommands;
 
 [SlashCommand("/help")]
 [TextCommand("Помощь")]

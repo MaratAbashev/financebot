@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinBot.Dal", "FinBot.Dal\Fi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinBot.Bll.Interfaces", "FinBot.Bll.Interfaces\FinBot.Bll.Interfaces.csproj", "{95051136-6828-4E3C-80CE-408CFD0BB3B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinBot.Bll.implementation", "FinBot.Bll.implementation\FinBot.Bll.implementation.csproj", "{AB445C98-D8E2-4ECF-AE95-913E3721FC25}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinBot.Bll.Implementation", "FinBot.Bll.Implementation\FinBot.Bll.Implementation.csproj", "{AB445C98-D8E2-4ECF-AE95-913E3721FC25}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinBot.Domain", "FinBot.Domain\FinBot.Domain.csproj", "{6BFEE6AE-3977-457D-B1DD-0D0BE291BE1F}"
 EndProject

@@ -1,5 +1,5 @@
-using FinBot.Bll.implementation.Handlers;
-using FinBot.Bll.implementation.Requests;
+using FinBot.Bll.Implementation.Handlers;
+using FinBot.Bll.Implementation.Requests;
 using FinBot.WebApi.Extensions;
 using MediatR;
 using Telegram.Bot;
