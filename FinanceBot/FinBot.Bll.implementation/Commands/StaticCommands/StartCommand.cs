@@ -15,9 +15,9 @@ public class StartCommand(ITelegramBotClient botClient): IStaticCommand
         .CreateKeyboard("Начать")
         .AddKeyboardRow("Помощь")
         .BuildKeyboardMarkup();
-    public async Task Handle(Message message)
+    public async Task Handle(Update update)
     {
-        await botClient.SendMessage(message.Chat.Id, 
+        await botClient.SendMessage(update.Message!.Chat.Id, 
             "Привет, я бот-помощник с финансами. Давай начнем работу",
             replyMarkup: _markup
             );

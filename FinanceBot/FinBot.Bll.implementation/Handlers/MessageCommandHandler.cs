@@ -12,17 +12,17 @@ public class MessageCommandHandler(
 {
     public async Task<Result> Handle(ProcessMessageCommandRequest request, CancellationToken cancellationToken)
     {
-        var message = request.Message;
-        if (staticCommands.TryGetValue(message.Text!, out var command))
+        var update = request.Update;
+        if (staticCommands.TryGetValue(update.Message!.Text!, out var command))
         {
-            await command.Handle(message);
+            await command.Handle(update);
             return Result.Success();
         }
 
-        var expPattern = regExpCommands.Keys.FirstOrDefault(pattern => Regex.IsMatch(message.Text!, pattern));
+        var expPattern = regExpCommands.Keys.FirstOrDefault(pattern => Regex.IsMatch(update.Message!.Text!, pattern));
         if (expPattern == null) 
             return Result.Failure("Unknown command", ErrorType.NotFound);
-        await regExpCommands[expPattern].Handle(message);
+        await regExpCommands[expPattern].Handle(update);
         return Result.Success();
     }
 }

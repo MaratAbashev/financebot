@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 using FinBot.Bll.implementation.Commands.StaticCommands;
+using FinBot.Bll.implementation.Handlers;
+using FinBot.Bll.Interfaces.Dialogs;
 using FinBot.Bll.Interfaces.TelegramCommands;
 using FinBot.Domain.Attributes;
 
@@ -18,7 +20,7 @@ public static class CommandRegistrationExtensions
         {
             services.AddTransient(typeof(IStaticCommand), commandType);
         }
-        services.AddSingleton<Dictionary<string, IStaticCommand>>(sp =>
+        services.AddScoped<Dictionary<string, IStaticCommand>>(sp =>
         {
             var staticCommandMap = sp
                 .GetKeyedServices<IStaticCommand>(null)
@@ -53,7 +55,7 @@ public static class CommandRegistrationExtensions
         {
             services.AddTransient(typeof(IRegExpCommand), commandType);
         }
-        services.AddSingleton<Dictionary<string, IRegExpCommand>>(sp =>
+        services.AddScoped<Dictionary<string, IRegExpCommand>>(sp =>
         {
             return sp
                 .GetKeyedServices<IRegExpCommand>(null)
@@ -65,6 +67,19 @@ public static class CommandRegistrationExtensions
                         .TextCommand,
                     v => v);
         });
+        return services;
+    }
+
+    public static IServiceCollection AddDialogs(this IServiceCollection services)
+    {
+        var dialogTypes = typeof(DialogHandler)
+            .Assembly
+            .GetTypes()
+            .Where(t => t.IsAssignableTo(typeof(IDialogDefinition)));
+        foreach (var dialogType in dialogTypes)
+        {
+            services.AddScoped(typeof(IDialogDefinition), dialogType);
+        }
         return services;
     }
 }

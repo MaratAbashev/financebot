@@ -4,4 +4,4 @@ using Telegram.Bot.Types;
 
 namespace FinBot.Bll.implementation.Requests;
 
-public record ProcessMessageCommandRequest(Message Message): IRequest, IRequest<Result>;
+public record ProcessMessageCommandRequest(Update Update): IRequest, IRequest<Result>;

@@ -10,9 +10,9 @@ namespace FinBot.Bll.implementation.Commands.StaticCommands;
 [TextCommand("Помощь")]
 public class HelpCommand(ITelegramBotClient botClient): IStaticCommand
 {
-    public async Task Handle(Message message)
+    public async Task Handle(Update update)
     {
-        await botClient.SendMessage(message.Chat.Id, 
+        await botClient.SendMessage(update.Message!.Chat.Id, 
             "Вот что я могу: \n1\\. Считать твой бюджет на день\n2\\. Строить графики того как ты экономишь",
             parseMode: ParseMode.MarkdownV2);
     }
