@@ -11,7 +11,7 @@ public class TextStep<T>(
     string key,
     string question, 
     Func<DialogContext, int> nextStepId,
-    bool isFirstStep = false): IStep 
+    bool isFirstStep = false): IStep where T: IConvertible 
 {
     private readonly Func<T, Result>? _validate;
     public bool IsFirstStep { get; init; } = isFirstStep;
@@ -47,15 +47,18 @@ public class TextStep<T>(
                 if (!validationResult.IsSuccess)
                     return Task.FromResult(Result.Failure(validationResult.ErrorMessage!, ErrorType.Validation));
             }
-            if (dialogContext.DialogStorage != null) 
+
+            if (dialogContext.DialogStorage != null)
                 dialogContext.DialogStorage[Key] = valueToAdd;
             return Task.FromResult(Result.Success());
+        }
+        catch (Exception ex) when (ex is FormatException or InvalidCastException)
+        {
+            return Task.FromResult(Result.Failure("Вы ввели данные некорректно, попробуйте еще раз", ErrorType.Validation));
         }
         catch (Exception ex)
         {
             return Task.FromResult(Result.Failure(ex.Message));
         }
-        
-        return Task.FromResult(Result.Failure($"Update type is {update.Type}, expected type is {UpdateType.Message}"));
     }
 }
