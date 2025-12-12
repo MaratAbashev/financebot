@@ -49,6 +49,8 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
         if (update.CallbackQuery is { Data: not null } query
             && query.Data.StartsWith("dlg__back"))
         {
+            if (query.Data.Split('/')[1] != dialogContext.DialogName)
+                return;
             dialogContext.CurrentStep = int.Parse(query.Data.Split('/').Last());
             await dialogDefinition.Steps[dialogContext.CurrentStep]
                 .PromptAsync(botClient, query.From.Id, dialogContext, cancellationToken);
