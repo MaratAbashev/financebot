@@ -7,7 +7,7 @@ namespace FinBot.Bll.Interfaces.Dialogs;
 
 public interface IStep
 {
-    public int Id { get; init; }
+    public bool IsFirstStep { get; init; }
     public string Key { get; init; }
     public Func<DialogContext, int> NextStepId { get; init; }
     public Task PromptAsync(ITelegramBotClient client, long chatId, DialogContext dialogContext, CancellationToken cancellationToken);

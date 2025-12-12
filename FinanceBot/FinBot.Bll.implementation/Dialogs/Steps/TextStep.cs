@@ -10,13 +10,14 @@ namespace FinBot.Bll.implementation.Dialogs.Steps;
 public class TextStep<T>(
     string key,
     string question, 
-    Func<DialogContext, int> nextStepId): IStep 
+    Func<DialogContext, int> nextStepId,
+    bool isFirstStep = false): IStep 
 {
     private readonly Func<T, Result>? _validate;
-    public int Id { get; init; }
+    public bool IsFirstStep { get; init; } = isFirstStep;
     public string Key { get; init; } = key;
     public Func<DialogContext, int> NextStepId { get; init; } = nextStepId;
-    public TextStep(string key, string question, Func<DialogContext, int> nextStepId, Func<T, Result> validate): this(key, question, nextStepId)
+    public TextStep(string key, string question, Func<DialogContext, int> nextStepId, Func<T, Result> validate, bool isFirstStep = false): this(key, question, nextStepId, isFirstStep)
     {
         _validate = validate;
     }
@@ -25,7 +26,7 @@ public class TextStep<T>(
         await client.SendMessage(chatId,
             question,
             parseMode: ParseMode.MarkdownV2,
-            replyMarkup: Id == 0 
+            replyMarkup: IsFirstStep 
                 ? null
                 : ReplyKeyboardBuilder.CreateBackButton(dialogContext.DialogName, dialogContext.CurrentStep),
             cancellationToken: cancellationToken);
