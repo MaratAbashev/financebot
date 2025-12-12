@@ -12,8 +12,9 @@ public class TestDialog(ITelegramBotClient botClient): IDialogDefinition
 
     public IReadOnlyDictionary<int, IStep> Steps { get; } = new Dictionary<int, IStep>
     {
-        { 0, new TextStep<string>("textStep1", "Question1", _ => 1, true) },
-        { 1, new TextStep<int>("textStep2", "Question2", _ => -1) },
+        { 0, new TextStep<string>("textStep1", "Question1", _ => 1, _ => -1, true) },
+        { 1, new TextStep<int>("textStep2", "Question2", _ => 2,  _ => 0) },
+        { 2, new TextStep<string>("textStep3", "Question3", _ => -1, _ => 1) }
     };
     public async Task OnCompletedAsync(long chatId, DialogContext dialogContext, CancellationToken cancellationToken)
     {

@@ -25,6 +25,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
         dialogContext.DialogName = request.DialogName;
         dialogContext.UserId = request.UserId;
         dialogContext.CurrentStep = 0;
+        dialogContext.PrevStep = -1;
         await dialogDefinition.Steps[dialogContext.CurrentStep]
             .PromptAsync(botClient, request.UserId, dialogContext, cancellationToken);
         if (dialogContext.Id == 0)
@@ -49,10 +50,14 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
         if (update.CallbackQuery is { Data: not null } query
             && query.Data.StartsWith("dlg__back"))
         {
-            if (query.Data.Split('/')[1] != dialogContext.DialogName)
+            var prevStepIndex = dialogContext.PrevStep;
+            if (query.Data.Split('/')[1] != dialogContext.DialogName
+                || !dialogDefinition.Steps.TryGetValue(prevStepIndex, out var prevStep))
                 return;
-            dialogContext.CurrentStep = int.Parse(query.Data.Split('/').Last());
-            await dialogDefinition.Steps[dialogContext.CurrentStep]
+            await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+            dialogContext.CurrentStep = prevStepIndex;
+            dialogContext.PrevStep = prevStep.PrevStepId(dialogContext);
+            await prevStep
                 .PromptAsync(botClient, query.From.Id, dialogContext, cancellationToken);
             await dialogRepository.SaveChangesAsync();
             return;
@@ -83,7 +88,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
             .TryGetValue(nextStepId, out var nextStep))
         {
             await nextStep.PromptAsync(botClient, dialogContext.UserId, dialogContext, cancellationToken);
-            dialogContext.CurrentStep = nextStepId;
+            (dialogContext.PrevStep, dialogContext.CurrentStep) = (dialogContext.CurrentStep, nextStepId);
             await dialogRepository.SaveChangesAsync();
             return;
         }

@@ -11,13 +11,16 @@ public class TextStep<T>(
     string key,
     string question, 
     Func<DialogContext, int> nextStepId,
+    Func<DialogContext, int> prevStepId,
     bool isFirstStep = false): IStep where T: IConvertible 
 {
     private readonly Func<T, Result>? _validate;
     public bool IsFirstStep { get; init; } = isFirstStep;
     public string Key { get; init; } = key;
     public Func<DialogContext, int> NextStepId { get; init; } = nextStepId;
-    public TextStep(string key, string question, Func<DialogContext, int> nextStepId, Func<T, Result> validate, bool isFirstStep = false): this(key, question, nextStepId, isFirstStep)
+    public Func<DialogContext, int> PrevStepId { get; init; } = prevStepId;
+
+    public TextStep(string key, string question, Func<DialogContext, int> nextStepId, Func<DialogContext, int> prevStepId, Func<T, Result> validate, bool isFirstStep = false): this(key, question, nextStepId, prevStepId, isFirstStep)
     {
         _validate = validate;
     }
@@ -28,7 +31,7 @@ public class TextStep<T>(
             parseMode: ParseMode.MarkdownV2,
             replyMarkup: IsFirstStep 
                 ? null
-                : ReplyKeyboardBuilder.CreateBackButton(dialogContext.DialogName, dialogContext.CurrentStep),
+                : ReplyKeyboardBuilder.CreateBackButton(dialogContext.DialogName),
             cancellationToken: cancellationToken);
     }
 

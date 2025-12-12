@@ -18,6 +18,9 @@ public class DialogConfiguration: IEntityTypeConfiguration<DialogContext>
         builder.Property(d => d.UserId)
             .IsRequired();
         
+        builder.Property(d => d.PrevStep)
+            .IsRequired();
+        
         builder.Property(d => d.CurrentStep)
             .IsRequired();
         
