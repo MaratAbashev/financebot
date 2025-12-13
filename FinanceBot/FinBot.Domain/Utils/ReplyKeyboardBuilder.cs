@@ -25,6 +25,11 @@ public static class ReplyKeyboardBuilder
         return [buttons];
     }
 
+    public static InlineKeyboardButton[][] CreateBackButton(string dialogName)
+    {
+        return CreateInlineKeyboard(new InlineKeyboardButton("Назад", $"dlg__back/{dialogName}"));
+    }
+
     public static KeyboardButton[][] AddKeyboardRow(this KeyboardButton[][] existingButtonRows,
         params KeyboardButton[] buttonsToAdd)
     {

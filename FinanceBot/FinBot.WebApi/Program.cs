@@ -1,7 +1,12 @@
 using FinBot.Bll.implementation.Handlers;
 using FinBot.Bll.implementation.Requests;
+using FinBot.Bll.Interfaces;
+using FinBot.Dal;
+using FinBot.Dal.DbContexts;
+using FinBot.Domain.Models;
 using FinBot.WebApi.Extensions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -25,6 +30,14 @@ builder.Services.AddMediatR(cfg =>
 
 builder.Services.AddStaticCommands();
 builder.Services.AddRegExpCommands();
+builder.Services.AddDialogs();
+
+builder.Services.AddDbContext<PDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("FinbotDb"));
+});
+builder.Services
+    .AddScoped<IGenericRepository<DialogContext, int, PDbContext>, GenericRepository<DialogContext, int, PDbContext>>();
 
 var app = builder.Build();
 
