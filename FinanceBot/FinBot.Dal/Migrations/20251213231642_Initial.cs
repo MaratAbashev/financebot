@@ -7,11 +7,28 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinBot.Dal.Migrations
 {
     /// <inheritdoc />
-    public partial class RealInitial : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "dialogs",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    dialog_name = table.Column<string>(type: "text", nullable: false),
+                    prev_step = table.Column<int>(type: "integer", nullable: false),
+                    current_step = table.Column<int>(type: "integer", nullable: false),
+                    dialog_storage = table.Column<string>(type: "jsonb", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_dialogs", x => x.id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "users",
                 columns: table => new
@@ -119,6 +136,12 @@ namespace FinBot.Dal.Migrations
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_dialogs_user_id",
+                table: "dialogs",
+                column: "user_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_groups_creator_id",
                 table: "groups",
                 column: "creator_id");
@@ -145,6 +168,9 @@ namespace FinBot.Dal.Migrations
         {
             migrationBuilder.DropTable(
                 name: "accounts");
+
+            migrationBuilder.DropTable(
+                name: "dialogs");
 
             migrationBuilder.DropTable(
                 name: "savings");
