@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\FinBot.Bll.implementation\FinBot.Bll.implementation.csproj" />
+      <ProjectReference Include="..\FinBot.Bll.Implementation\FinBot.Bll.Implementation.csproj" />
       <ProjectReference Include="..\FinBot.Dal\FinBot.Dal.csproj" />
       <ProjectReference Include="..\FinBot.Domain\FinBot.Domain.csproj" />
     </ItemGroup>

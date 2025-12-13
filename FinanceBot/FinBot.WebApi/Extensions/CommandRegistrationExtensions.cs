@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using FinBot.Bll.Implementation.Commands.StaticCommands;
 using FinBot.Bll.implementation.Commands.StaticCommands;
 using FinBot.Bll.implementation.Handlers;
 using FinBot.Bll.Interfaces.Dialogs;

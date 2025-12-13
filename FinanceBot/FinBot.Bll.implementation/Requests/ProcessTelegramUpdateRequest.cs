@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Telegram.Bot.Types;
 
-namespace FinBot.Bll.implementation.Requests;
+namespace FinBot.Bll.Implementation.Requests;
 
 public record ProcessTelegramUpdateRequest(Update Update): IRequest;
