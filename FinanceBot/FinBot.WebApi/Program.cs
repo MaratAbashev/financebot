@@ -6,11 +6,21 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var webHookUrl = configuration["Bot:WebhookUrl"]!;
+
+builder.Host.UseSerilog((context, loggerConfig) => 
+{
+    loggerConfig
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.Seq(context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341");
+});
 
 services.AddPostgresDb(configuration);
 services.AddTelegram(configuration);
