@@ -1,6 +1,6 @@
 using FinBot.Domain.Utils;
 
-namespace FinBot.Domain.Models;
+namespace FinBot.Domain.Models.Saving;
 
 public class Saving : IBusinessEntity<Guid>
 {

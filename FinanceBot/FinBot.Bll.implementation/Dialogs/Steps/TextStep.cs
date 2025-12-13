@@ -5,7 +5,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace FinBot.Bll.implementation.Dialogs.Steps;
+namespace FinBot.Bll.Implementation.Dialogs.Steps;
 
 public class TextStep<T>(
     string key,

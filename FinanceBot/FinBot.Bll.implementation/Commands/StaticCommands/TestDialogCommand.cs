@@ -1,10 +1,10 @@
-﻿using FinBot.Bll.implementation.Requests;
+﻿using FinBot.Bll.Implementation.Requests;
 using FinBot.Bll.Interfaces.TelegramCommands;
 using FinBot.Domain.Attributes;
 using MediatR;
 using Telegram.Bot.Types;
 
-namespace FinBot.Bll.implementation.Commands.StaticCommands;
+namespace FinBot.Bll.Implementation.Commands.StaticCommands;
 
 [SlashCommand("/test")]
 [TextCommand("Тест")]

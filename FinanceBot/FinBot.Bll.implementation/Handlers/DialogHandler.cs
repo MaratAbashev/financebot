@@ -1,4 +1,4 @@
-﻿using FinBot.Bll.implementation.Requests;
+﻿using FinBot.Bll.Implementation.Requests;
 using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Dialogs;
 using FinBot.Dal.DbContexts;
@@ -6,10 +6,9 @@ using FinBot.Domain.Models;
 using FinBot.Domain.Utils;
 using MediatR;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace FinBot.Bll.implementation.Handlers;
+namespace FinBot.Bll.Implementation.Handlers;
 
 public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> dialogRepository,
     IEnumerable<IDialogDefinition> dialogs,

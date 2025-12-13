@@ -1,4 +1,5 @@
 using FinBot.Domain.Models;
+using FinBot.Domain.Models.Saving;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

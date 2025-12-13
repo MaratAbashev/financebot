@@ -1,10 +1,10 @@
-﻿using FinBot.Bll.implementation.Dialogs.Steps;
+﻿using FinBot.Bll.Implementation.Dialogs.Steps;
 using FinBot.Bll.Interfaces.Dialogs;
 using FinBot.Domain.Models;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
-namespace FinBot.Bll.implementation.Dialogs;
+namespace FinBot.Bll.Implementation.Dialogs;
 
 public class TestDialog(ITelegramBotClient botClient): IDialogDefinition
 {
