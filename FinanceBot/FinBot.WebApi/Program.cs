@@ -1,43 +1,19 @@
-using FinBot.Bll.Implementation.Handlers;
 using FinBot.Bll.Implementation.Requests;
-using FinBot.Bll.Interfaces;
 using FinBot.Dal;
 using FinBot.Dal.DbContexts;
-using FinBot.Domain.Models;
 using FinBot.WebApi.Extensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-using FinBot.Dal;
-using FinBot.Dal.DbContexts;
-using Microsoft.EntityFrameworkCore;
-
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
-var congiguration = builder.Configuration;
+var configuration = builder.Configuration;
+var webHookUrl = configuration["Bot:WebhookUrl"]!;
 
-services.AddPostgresDb(congiguration);
-
-var token = builder.Configuration["Bot:Token"]!;
-var webHookUrl = builder.Configuration["Bot:WebhookUrl"]!;
-builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(token));
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssemblyContaining<TelegramUpdateRequestHandler>();
-});
-
-builder.Services.AddStaticCommands();
-builder.Services.AddRegExpCommands();
-builder.Services.AddDialogs();
-
-builder.Services.AddDbContext<PDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("FinbotDb"));
-});
-builder.Services
-    .AddScoped<IGenericRepository<DialogContext, int, PDbContext>, GenericRepository<DialogContext, int, PDbContext>>();
+services.AddPostgresDb(configuration);
+services.AddTelegram(configuration);
 
 var app = builder.Build();
 

@@ -6,7 +6,7 @@
       dockerfile: FinBot.WebApi/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__AppDbContext: Host=postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      ConnectionStrings__PDbContext: Host=postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
     ports:
       - "5001:8080"
     depends_on:
@@ -20,7 +20,7 @@
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=finbot_db
     ports:
-      - "54321:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

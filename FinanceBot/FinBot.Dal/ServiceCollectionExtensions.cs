@@ -1,4 +1,6 @@
+using FinBot.Bll.Interfaces;
 using FinBot.Dal.DbContexts;
+using FinBot.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,7 @@ public static class ServiceCollectionExtensions
             options.UseNpgsql(configuration.GetConnectionString(nameof(PDbContext)));
             options.UseSnakeCaseNamingConvention();
         });
+        services.AddScoped<IGenericRepository<DialogContext, int, PDbContext>, GenericRepository<DialogContext, int, PDbContext>>();
 
         return services;
     }
