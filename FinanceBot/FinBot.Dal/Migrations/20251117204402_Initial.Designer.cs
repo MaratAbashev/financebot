@@ -2,6 +2,7 @@
 using FinBot.Dal.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinBot.Dal.Migrations
 {
     [DbContext(typeof(PDbContext))]
-    partial class PDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251117204402_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,7 +24,7 @@ namespace FinBot.Dal.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("FinBot.Domain.Models.DialogContext", b =>
+            modelBuilder.Entity("FinBot.Domain.Models.Dialog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -32,15 +35,8 @@ namespace FinBot.Dal.Migrations
                     b.Property<int>("CurrentStep")
                         .HasColumnType("integer");
 
-                    b.Property<string>("DialogName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("DialogStorage")
                         .HasColumnType("jsonb");
-
-                    b.Property<int>("PrevStep")
-                        .HasColumnType("integer");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");

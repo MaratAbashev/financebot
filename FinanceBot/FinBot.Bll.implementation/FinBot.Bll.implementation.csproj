@@ -13,6 +13,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\FinBot.Bll.Interfaces\FinBot.Bll.Interfaces.csproj" />
+      <ProjectReference Include="..\FinBot.Dal\FinBot.Dal.csproj" />
       <ProjectReference Include="..\FinBot.Domain\FinBot.Domain.csproj" />
     </ItemGroup>
 

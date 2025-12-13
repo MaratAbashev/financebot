@@ -2,6 +2,7 @@
 using FinBot.Dal.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinBot.Dal.Migrations
 {
     [DbContext(typeof(PDbContext))]
-    partial class PDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251211213922_rebuild dbcontext")]
+    partial class rebuilddbcontext
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -38,9 +41,6 @@ namespace FinBot.Dal.Migrations
 
                     b.Property<string>("DialogStorage")
                         .HasColumnType("jsonb");
-
-                    b.Property<int>("PrevStep")
-                        .HasColumnType("integer");
 
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");

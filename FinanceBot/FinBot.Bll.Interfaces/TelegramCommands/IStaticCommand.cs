@@ -4,5 +4,5 @@ namespace FinBot.Bll.Interfaces.TelegramCommands;
 
 public interface IStaticCommand
 {
-    Task Handle(Message message);
+    Task Handle(Update update);
 }
