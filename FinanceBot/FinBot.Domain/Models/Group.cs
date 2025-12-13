@@ -1,3 +1,4 @@
+using FinBot.Domain.Models.AllocationModel;
 using FinBot.Domain.Utils;
 
 namespace FinBot.Domain.Models;

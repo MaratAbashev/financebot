@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using FinBot.Bll.Implementation.Commands.StaticCommands;
-using FinBot.Bll.implementation.Commands.StaticCommands;
-using FinBot.Bll.implementation.Handlers;
+using FinBot.Bll.Implementation.Handlers;
 using FinBot.Bll.Interfaces.Dialogs;
 using FinBot.Bll.Interfaces.TelegramCommands;
 using FinBot.Domain.Attributes;
