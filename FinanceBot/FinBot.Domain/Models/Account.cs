@@ -1,5 +1,5 @@
-using FinBot.Domain.Models.Saving;
 using FinBot.Domain.Models.AllocationModel;
+using FinBot.Domain.Models.SavingModel;
 using FinBot.Domain.Utils;
 
 namespace FinBot.Domain.Models;

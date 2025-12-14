@@ -6,7 +6,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace FinBot.Bll.Implementation.Dialogs;
 
-public class TestDialog(ITelegramBotClient botClient): IDialogDefinition
+public class TestDialog(ITelegramBotClient botClient)//: IDialogDefinition
 {
     public string DialogName => "TestDialog";
 

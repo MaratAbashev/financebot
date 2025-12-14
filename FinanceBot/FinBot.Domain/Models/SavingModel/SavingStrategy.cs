@@ -1,4 +1,4 @@
-namespace FinBot.Domain.Models.Saving;
+namespace FinBot.Domain.Models.SavingModel;
 
 public enum SavingStrategy
 {

@@ -19,12 +19,6 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
             .HasMaxLength(50)
             .IsRequired();
 
-        builder.OwnsOne(g => g.AllocationPeriod, period =>
-        {
-            period.Property(p => p.Months).HasColumnName("allocation_period_months").HasDefaultValue(0);
-            period.Property(p => p.Days).HasColumnName("allocation_period_days").HasDefaultValue(0);
-        });
-
         builder.HasOne(g => g.Creator)
             .WithMany()
             .HasForeignKey(g => g.CreatorId)
