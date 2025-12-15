@@ -13,57 +13,65 @@ public class CreateGroupDialog(
     public string DialogName => nameof(CreateGroupDialog);
 
     public IReadOnlyDictionary<int, IStep> Steps { get; } = new Dictionary<int, IStep>
-    {
-        {
+    {{
             0, new TextStep<string>(
-                "replenishment",
-                @"Введите **ежемесячное** пополнение счёта \- целое число рублей",
+                "groupName",
+                @"Введите название новой группы",
                 _ => 1,
                 _ => -1,
                 true)
         },
         {
             1, new TextStep<string>(
-                "endDayLogic",
-                "Что будем делать с деньгами в конце **дня**?\n0 Копим\n1 Размазываем на месяц",
+                "replenishment",
+                @"Введите **ежемесячное** пополнение счёта \- целое число рублей",
                 _ => 2,
                 _ => 0,
-                false)
+                true)
         },
         {
             2, new TextStep<string>(
+                "endDayLogic",
+                "Что будем делать с деньгами в конце **дня**?\n0 Копим\n1 Размазываем на месяц",
+                _ => 3,
+                _ => 1,
+                false)
+        },
+        {
+            3, new TextStep<string>(
                 "endMonthLogic",
                 "Что будем делать с деньгами в конце **месяца**?\n0 Копим\n1 Переносим на следующий месяц",
                 context =>
                 {
                     if (int.Parse((string)context.DialogStorage!["endMonthLogic"]) == 0)
-                        return 3;
+                        return 4;
                     
                     return -1;
                 },
-                _ => 0,
-                false)
-        },
-        {
-            3, new TextStep<string>(
-                "goal",
-                "На что копим?",
-                _ => 4,
                 _ => 2,
                 false)
         },
         {
             4, new TextStep<string>(
+                "goal",
+                "На что копим?",
+                _ => 5,
+                _ => 3,
+                false)
+        },
+        {
+            5, new TextStep<string>(
                 "moneyGoal",
                 @"Сколько нам на это копить целое \- число рублей?",
                 _ => -1,
-                _ => 3,
+                _ => 4,
                 false)
         }
     };
 
     public async Task OnCompletedAsync(long chatId, DialogContext dialogContext, CancellationToken cancellationToken)
     {
+        var groupName = (string)dialogContext.DialogStorage!["groupName"];
         var replenishment = int.Parse((string)dialogContext.DialogStorage!["replenishment"]);
         var endDayLogic = int.Parse((string)dialogContext.DialogStorage!["endDayLogic"]);
         var endMonthLogic = int.Parse((string)dialogContext.DialogStorage!["endMonthLogic"]);
