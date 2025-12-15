@@ -9,14 +9,11 @@ public class Saving : IBusinessEntity<Guid>
     /// <summary>
     /// На что копим
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public decimal TargetAmount { get; set; }
     public decimal CurrentAmount { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
-    
-    public Guid OwnerId { get; set; }
-    public User? Owner { get; set; }
     
     public Guid GroupId { get; set; }
     public Group? Group { get; set; }

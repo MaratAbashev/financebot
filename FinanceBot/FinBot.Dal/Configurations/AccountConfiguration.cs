@@ -24,16 +24,6 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
             .HasPrecision(18, 2)
             .HasDefaultValue(0);
 
-        builder.OwnsOne(a => a.DailyAllocation, allocation =>
-        {
-            allocation.Property(al => al.FlatAllocation)
-                .HasColumnName("allocation_flat")
-                .HasPrecision(18, 2);
-
-            allocation.Property(al => al.WeightenedAllocation)
-                .HasColumnName("allocation_weight");
-        });
-
         builder.HasOne(a => a.User)
             .WithMany(u => u.Accounts)
             .HasForeignKey(a => a.UserId)
