@@ -34,9 +34,8 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
                 .HasColumnName("allocation_weight");
         });
 
-        // Связи
         builder.HasOne(a => a.User)
-            .WithMany()
+            .WithMany(u => u.Accounts)
             .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 

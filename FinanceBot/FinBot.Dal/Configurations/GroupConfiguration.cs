@@ -20,13 +20,18 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
             .IsRequired();
 
         builder.HasOne(g => g.Creator)
-            .WithMany()
+            .WithMany(g => g.Groups)
             .HasForeignKey(g => g.CreatorId)
-            .OnDelete(DeleteBehavior.Restrict); // Не удаляем пользователя, если удаляется группа
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(g => g.Accounts)
             .WithOne(a => a.Group)
             .HasForeignKey(a => a.GroupId)
-            .OnDelete(DeleteBehavior.Cascade); // Удаляем аккаунты при удалении группы
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(g => g.Saving)
+            .WithOne(s => s.Group)
+            .HasForeignKey<Group>(s => s.SavingId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

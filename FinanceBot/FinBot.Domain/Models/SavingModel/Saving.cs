@@ -5,6 +5,10 @@ namespace FinBot.Domain.Models.SavingModel;
 public class Saving : IBusinessEntity<Guid>
 {
     public Guid Id { get; set; }
+    
+    /// <summary>
+    /// На что копим
+    /// </summary>
     public string Name { get; set; }
     public decimal TargetAmount { get; set; }
     public decimal CurrentAmount { get; set; }
