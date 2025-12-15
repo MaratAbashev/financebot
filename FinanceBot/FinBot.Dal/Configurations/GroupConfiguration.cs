@@ -1,4 +1,5 @@
 using FinBot.Domain.Models;
+using FinBot.Domain.Models.SavingModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,8 +14,8 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(g => g.Name)
             .HasMaxLength(255)
             .IsRequired();
-
-        builder.Property(g => g.AllocationStrategy)
+        
+        builder.Property(g => g.SavingStrategy)
             .HasConversion<string>()
             .HasMaxLength(50)
             .IsRequired();
@@ -31,7 +32,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
 
         builder.HasOne(g => g.Saving)
             .WithOne(s => s.Group)
-            .HasForeignKey<Group>(s => s.SavingId)
+            .HasForeignKey<Saving>(s => s.GroupId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

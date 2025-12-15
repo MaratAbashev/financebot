@@ -3,6 +3,7 @@ using System;
 using FinBot.Dal.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinBot.Dal.Migrations
 {
     [DbContext(typeof(PDbContext))]
-    partial class PDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251215082049_AddSavingAndUserRelations")]
+    partial class AddSavingAndUserRelations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,10 +40,6 @@ namespace FinBot.Dal.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasDefaultValue(0m)
                         .HasColumnName("balance");
-
-                    b.Property<decimal>("DailyAllocation")
-                        .HasColumnType("numeric")
-                        .HasColumnName("daily_allocation");
 
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid")
@@ -121,21 +120,15 @@ namespace FinBot.Dal.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AllocationStrategy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("allocation_strategy");
+
                     b.Property<Guid>("CreatorId")
                         .HasColumnType("uuid")
                         .HasColumnName("creator_id");
-
-                    b.Property<int>("DebtStrategy")
-                        .HasColumnType("integer")
-                        .HasColumnName("debt_strategy");
-
-                    b.Property<decimal>("GroupBalance")
-                        .HasColumnType("numeric")
-                        .HasColumnName("group_balance");
-
-                    b.Property<decimal>("MonthlyReplenishment")
-                        .HasColumnType("numeric")
-                        .HasColumnName("monthly_replenishment");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -143,11 +136,9 @@ namespace FinBot.Dal.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
-                    b.Property<string>("SavingStrategy")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("saving_strategy");
+                    b.Property<Guid>("SavingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("saving_id");
 
                     b.HasKey("Id")
                         .HasName("pk_groups");
@@ -192,6 +183,10 @@ namespace FinBot.Dal.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
                     b.Property<decimal>("TargetAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
@@ -203,6 +198,9 @@ namespace FinBot.Dal.Migrations
                     b.HasIndex("GroupId")
                         .IsUnique()
                         .HasDatabaseName("ix_savings_group_id");
+
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_savings_owner_id");
 
                     b.ToTable("savings", (string)null);
                 });
@@ -250,6 +248,33 @@ namespace FinBot.Dal.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_accounts_users_user_id");
 
+                    b.OwnsOne("FinBot.Domain.Models.AllocationModel.Allocation", "DailyAllocation", b1 =>
+                        {
+                            b1.Property<int>("AccountId")
+                                .HasColumnType("integer")
+                                .HasColumnName("id");
+
+                            b1.Property<decimal?>("FlatAllocation")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("allocation_flat");
+
+                            b1.Property<int?>("WeightenedAllocation")
+                                .HasColumnType("integer")
+                                .HasColumnName("allocation_weight");
+
+                            b1.HasKey("AccountId");
+
+                            b1.ToTable("accounts");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AccountId")
+                                .HasConstraintName("fk_accounts_accounts_id");
+                        });
+
+                    b.Navigation("DailyAllocation")
+                        .IsRequired();
+
                     b.Navigation("Group");
 
                     b.Navigation("User");
@@ -276,7 +301,16 @@ namespace FinBot.Dal.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_savings_groups_group_id");
 
+                    b.HasOne("FinBot.Domain.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_savings_users_owner_id");
+
                     b.Navigation("Group");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("FinBot.Domain.Models.Group", b =>

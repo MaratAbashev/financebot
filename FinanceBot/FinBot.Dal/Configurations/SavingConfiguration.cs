@@ -28,11 +28,6 @@ public class SavingConfiguration : IEntityTypeConfiguration<Saving>
         builder.Property(s => s.CreatedAt)
             .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc)); // Для PostgreSQL важно явно указывать UTC
 
-        builder.HasOne(s => s.Owner)
-            .WithMany()
-            .HasForeignKey(s => s.OwnerId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasOne(s => s.Group)
             .WithOne(g => g.Saving)
             .HasForeignKey<Saving>(s => s.GroupId);

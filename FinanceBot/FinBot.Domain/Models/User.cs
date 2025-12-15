@@ -22,6 +22,8 @@ public class User : IBusinessEntity<Guid>
     /// </summary>
     public string DisplayName { get; set; }
 
+    // Группы, в которых юз - создатель
     public List<Group> Groups { get; set; } = [];
+    // Просто счета из всех групп, в которых состоти юз
     public List<Account> Accounts { get; set; } = [];
 }
