@@ -8,7 +8,7 @@ public class Account : IBusinessEntity<int>
 {
     public int Id { get; set; }
     public Role Role { get; set; }
-    public required Allocation DailyAllocation { get; set; }
+    public Allocation DailyAllocation { get; set; }
     public SavingStrategy SavingStrategy { get; set; }
     
     public decimal Balance { get; set; }

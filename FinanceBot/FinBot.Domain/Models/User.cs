@@ -20,5 +20,5 @@ public class User : IBusinessEntity<Guid>
     /// <summary>
     /// Отображаемое имя пользователя
     /// </summary>
-    public required string DisplayName { get; set; }
+    public string DisplayName { get; set; }
 }

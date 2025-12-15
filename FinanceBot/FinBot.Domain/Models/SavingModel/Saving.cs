@@ -5,7 +5,7 @@ namespace FinBot.Domain.Models.SavingModel;
 public class Saving : IBusinessEntity<Guid>
 {
     public Guid Id { get; set; }
-    public required string Name { get; set; }
+    public string Name { get; set; }
     public decimal TargetAmount { get; set; }
     public decimal CurrentAmount { get; set; }
     public bool IsActive { get; set; }
