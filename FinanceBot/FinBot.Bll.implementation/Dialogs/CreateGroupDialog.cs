@@ -6,7 +6,9 @@ using Telegram.Bot;
 
 namespace FinBot.Bll.Implementation.Dialogs;
 
-public class CreateGroupDialog(ITelegramBotClient botClient, ILogger<CreateGroupDialog> logger) : IDialogDefinition
+public class CreateGroupDialog(
+    ITelegramBotClient botClient,
+    ILogger<CreateGroupDialog> logger) : IDialogDefinition
 {
     public string DialogName => nameof(CreateGroupDialog);
 
@@ -32,7 +34,7 @@ public class CreateGroupDialog(ITelegramBotClient botClient, ILogger<CreateGroup
             2, new TextStep<string>(
                 "endMonthLogic",
                 "Что будем делать с деньгами в конце **месяца**?\n0 Копим\n1 Переносим на следующий месяц",
-                (context) =>
+                context =>
                 {
                     if (int.Parse((string)context.DialogStorage!["endMonthLogic"]) == 0)
                         return 3;
@@ -62,6 +64,10 @@ public class CreateGroupDialog(ITelegramBotClient botClient, ILogger<CreateGroup
 
     public async Task OnCompletedAsync(long chatId, DialogContext dialogContext, CancellationToken cancellationToken)
     {
-        logger.LogCritical("OnCompletedAsync in CreateGroupDialog");
+        var replenishment = int.Parse((string)dialogContext.DialogStorage!["replenishment"]);
+        var endDayLogic = int.Parse((string)dialogContext.DialogStorage!["endDayLogic"]);
+        var endMonthLogic = int.Parse((string)dialogContext.DialogStorage!["endMonthLogic"]);
+        var goal = endMonthLogic == 0 ? (string)dialogContext.DialogStorage!["goal"] : null;
+        var moneyGoal = endDayLogic == 0 ? int.Parse((string)dialogContext.DialogStorage!["moneyGoal"]) : 0;
     }
 }
