@@ -54,6 +54,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
                 || !dialogDefinition.Steps.TryGetValue(prevStepIndex, out var prevStep))
                 return;
             await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+            dialogContext.DialogStorage?.Remove(dialogDefinition.Steps[dialogContext.CurrentStep].Key);
             dialogContext.CurrentStep = prevStepIndex;
             dialogContext.PrevStep = prevStep.PrevStepId(dialogContext);
             await prevStep
