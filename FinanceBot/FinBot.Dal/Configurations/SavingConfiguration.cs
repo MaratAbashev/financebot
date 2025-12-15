@@ -34,8 +34,7 @@ public class SavingConfiguration : IEntityTypeConfiguration<Saving>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(s => s.Group)
-            .WithMany()
-            .HasForeignKey(s => s.GroupId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .WithOne(g => g.Saving)
+            .HasForeignKey<Saving>(s => s.GroupId);
     }
 }

@@ -1,4 +1,5 @@
 using FinBot.Domain.Models.AllocationModel;
+using FinBot.Domain.Models.SavingModel;
 using FinBot.Domain.Utils;
 
 namespace FinBot.Domain.Models;
@@ -11,4 +12,6 @@ public class Group : IBusinessEntity<Guid>
     public List<Account> Accounts { get; set; }
     public Guid CreatorId { get; set; }
     public User? Creator { get; set; }
+    public Guid SavingId { get; set; }
+    public Saving? Saving { get; set; }
 }

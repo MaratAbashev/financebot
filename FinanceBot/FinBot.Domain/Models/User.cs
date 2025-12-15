@@ -21,4 +21,7 @@ public class User : IBusinessEntity<Guid>
     /// Отображаемое имя пользователя
     /// </summary>
     public string DisplayName { get; set; }
+
+    public List<Group> Groups { get; set; } = [];
+    public List<Account> Accounts { get; set; } = [];
 }
