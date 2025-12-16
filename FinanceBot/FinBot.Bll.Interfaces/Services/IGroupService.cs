@@ -15,7 +15,7 @@ public interface IGroupService
         string? savingTargetName,
         decimal? savingTargetAmount);
     
-    Task<Result> RecalculateAllocationsAsync(
+    Task<Result> RecalculateMonthlyAllocationsAsync(
         Group group,
         decimal[] allocations);
     

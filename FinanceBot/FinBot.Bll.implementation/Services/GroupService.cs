@@ -30,7 +30,7 @@ public class GroupService(
         {
             var now = DateTime.Now;
             var daysInMonthLeft = DateTime.DaysInMonth(now.Year, now.Month) - (now.Day - 1);
-            var dailyUserAllocation = replenishment / daysInMonthLeft;
+            var dailyUserAllocation = Math.Round(replenishment / daysInMonthLeft, 2, MidpointRounding.ToZero);
             var todayGroupBalance = replenishment - dailyUserAllocation;
 
             var newGroup = new Group
@@ -65,6 +65,7 @@ public class GroupService(
             {
                 Role = Role.Admin,
                 DailyAllocation = dailyUserAllocation,
+                MonthlyAllocation = replenishment,
                 SavingStrategy = accountSavingStrategy,
                 Balance = dailyUserAllocation,
                 UserId = creator.Id,
@@ -91,14 +92,17 @@ public class GroupService(
         }
     }
 
-    public async Task<Result> RecalculateAllocationsAsync(Group group, decimal[] allocations)
+    public async Task<Result> RecalculateMonthlyAllocationsAsync(Group group, decimal[] allocations)
     {
         try
         {
             var accounts = group.Accounts.OrderBy(a => a.Id).ToList();
+            var now = DateTime.Now;
+            var daysInMonthLeft = DateTime.DaysInMonth(now.Year, now.Month) - (now.Day - 1);
             for (var i = 0; i < accounts.Count; i++)
             {
-                accounts[i].DailyAllocation = allocations[i];
+                accounts[i].MonthlyAllocation = allocations[i];
+                accounts[i].DailyAllocation = Math.Round(allocations[i] / daysInMonthLeft, 2, MidpointRounding.ToZero);
             }
 
             await unitOfWork.SaveChangesAsync();
@@ -146,7 +150,7 @@ public class GroupService(
         await using var transaction = unitOfWork.BeginDbTransaction();
         try
         {
-            await RecalculateAllocationsAsync(group, oldUserAllocations);
+            await RecalculateMonthlyAllocationsAsync(group, oldUserAllocations);
 
             var userResult = await userService.GetOrCreateUserAsync(newUserTgId, newUserDisplayName);
             if (!userResult.IsSuccess)
@@ -156,13 +160,19 @@ public class GroupService(
             }
 
             var user = userResult.Data;
-
+            
+            var now = DateTime.Now;
+            var daysInMonthLeft = DateTime.DaysInMonth(now.Year, now.Month) - (now.Day - 1);
+            var dailyUserAllocation = Math.Round(newUserAllocation / daysInMonthLeft, 2, MidpointRounding.ToZero);
+            group.GroupBalance -= dailyUserAllocation;
+            
             var newAccount = new Account
             {
                 Role = newUserRole,
-                DailyAllocation = newUserAllocation,
+                DailyAllocation = dailyUserAllocation,
+                MonthlyAllocation = newUserAllocation,
                 SavingStrategy = newUserSavingStrategy,
-                Balance = newUserAllocation,
+                Balance = dailyUserAllocation,
                 UserId = user.Id,
                 User = user,
                 GroupId = group.Id,
@@ -171,7 +181,10 @@ public class GroupService(
 
             user.Accounts.Add(newAccount);
             group.Accounts.Add(newAccount);
-
+            
+            await unitOfWork.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
             return Result<Account>.Success(newAccount);
         }
         catch (Exception ex)

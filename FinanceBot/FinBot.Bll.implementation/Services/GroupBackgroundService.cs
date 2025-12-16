@@ -101,11 +101,13 @@ public class GroupBackgroundService(IUnitOfWork<PDbContext> unitOfWork, ILogger<
 
             group.GroupBalance = replenishment;
 
-            var weight = group.GroupBalance / accounts.Select(a => a.DailyAllocation).Sum();
+            var weight = group.GroupBalance / accounts.Select(a => a.MonthlyAllocation).Sum();
+            var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
             foreach (var account in group.Accounts)
             {
-                var allocation = weight * account.DailyAllocation;
-                account.Balance += allocation;
+                account.MonthlyAllocation *= weight;
+                account.DailyAllocation = Math.Round(account.MonthlyAllocation / daysInMonth, 2, MidpointRounding.ToZero);
+                account.Balance += account.DailyAllocation;
             }
 
             await unitOfWork.SaveChangesAsync();
@@ -156,11 +158,13 @@ public class GroupBackgroundService(IUnitOfWork<PDbContext> unitOfWork, ILogger<
 
             // todo: Проверка на достижение цели
 
-            var weight = group.GroupBalance / accounts.Select(a => a.DailyAllocation).Sum();
+            var weight = group.GroupBalance / accounts.Select(a => a.MonthlyAllocation).Sum();
+            var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
             foreach (var account in group.Accounts)
             {
-                var allocation = weight * account.DailyAllocation;
-                account.Balance += allocation;
+                account.MonthlyAllocation *= weight;
+                account.DailyAllocation = Math.Round(account.MonthlyAllocation / daysInMonth, 2, MidpointRounding.ToZero);
+                account.Balance += account.DailyAllocation;
             }
 
             await unitOfWork.SaveChangesAsync();
