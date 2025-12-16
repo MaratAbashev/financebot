@@ -3,7 +3,6 @@ using FinBot.Bll.Interfaces.Services;
 using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
 using FinBot.Domain.Models.Enums;
-using FinBot.Domain.Models.SavingModel;
 using FinBot.Domain.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -118,7 +117,7 @@ public class GroupBackgroundService(IUnitOfWork<PDbContext> unitOfWork, ILogger<
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Something went wrong during monthly group refresh: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during monthly group refresh: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result.Failure(ex.Message);
         }
     }
@@ -175,7 +174,7 @@ public class GroupBackgroundService(IUnitOfWork<PDbContext> unitOfWork, ILogger<
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Something went wrong during daily accounts recalculation: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during daily accounts recalculation: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result.Failure(ex.Message);
         }
     }

@@ -1,5 +1,4 @@
 using FinBot.Domain.Models.Enums;
-using FinBot.Domain.Models.SavingModel;
 using FinBot.Domain.Utils;
 
 namespace FinBot.Domain.Models;

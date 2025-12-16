@@ -16,8 +16,14 @@ public static class ServiceCollectionExtensions
             options.UseNpgsql(configuration.GetConnectionString(nameof(PDbContext)));
             options.UseSnakeCaseNamingConvention();
         });
+        
         services.AddScoped<IGenericRepository<DialogContext, int, PDbContext>, GenericRepository<DialogContext, int, PDbContext>>();
-
+        services.AddScoped<IGenericRepository<User, Guid, PDbContext>, GenericRepository<User, Guid, PDbContext>>();
+        services.AddScoped<IGenericRepository<Group, Guid, PDbContext>, GenericRepository<Group, Guid, PDbContext>>();
+        services.AddScoped<IGenericRepository<Saving, Guid, PDbContext>, GenericRepository<Saving, Guid, PDbContext>>();
+        
+        services.AddScoped<IUnitOfWork<PDbContext>, UnitOfWork<PDbContext>>();
+        
         return services;
     }
 }

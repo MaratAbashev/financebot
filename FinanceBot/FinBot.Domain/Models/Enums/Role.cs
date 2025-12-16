@@ -1,4 +1,4 @@
-namespace FinBot.Domain.Models;
+namespace FinBot.Domain.Models.Enums;
 
 public enum Role
 {

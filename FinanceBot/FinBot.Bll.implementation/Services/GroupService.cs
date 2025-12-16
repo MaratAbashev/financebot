@@ -3,7 +3,6 @@ using FinBot.Bll.Interfaces.Services;
 using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
 using FinBot.Domain.Models.Enums;
-using FinBot.Domain.Models.SavingModel;
 using FinBot.Domain.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -87,7 +86,7 @@ public class GroupService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during create group: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during create group: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result<Group>.Failure(ex.Message);
         }
     }
@@ -111,12 +110,12 @@ public class GroupService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during recalculate allocations: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during recalculate allocations: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result.Failure(ex.Message);
         }
     }
 
-    public async Task<Result<Saving>> ChangeGoalAsync(Group group, string savingTargetName, int savingTargetAmount)
+    public async Task<Result<Saving>> ChangeGoalAsync(Group group, string savingTargetName, decimal savingTargetAmount)
     {
         try
         {
@@ -133,14 +132,13 @@ public class GroupService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during change goal: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during change goal: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result<Saving>.Failure(ex.Message);
         }
     }
 
-    public async Task<Result<Account>> AddUserAsyncToGroup(
+    public async Task<Result<Account>> AddUserToGroupAsync(
         Group group,
-        Guid newUserId,
         long newUserTgId,
         string newUserDisplayName,
         Role newUserRole,
@@ -190,7 +188,7 @@ public class GroupService(
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Something went wrong during add user to group: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during add user to group: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result<Account>.Failure(ex.Message);
         }
     }

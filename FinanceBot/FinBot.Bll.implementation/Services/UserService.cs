@@ -2,6 +2,7 @@ using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Services;
 using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
+using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -19,7 +20,7 @@ public class UserService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during get user: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during get user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result<User?>.Failure(ex.Message);
         }
     }
@@ -48,7 +49,7 @@ public class UserService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during create user: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during create user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result<User>.Failure(ex.Message);
         }
     }
@@ -76,8 +77,37 @@ public class UserService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during get or create user: {errorMessage}", ex.Message);
+            logger.LogError("Something went wrong during get or create user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
             return Result<User>.Failure(ex.Message);
         }
+    }
+
+    public async Task<Result<decimal>> AddExpenseAsync(User user, Guid groupId, decimal amount, ExpenseCategory category)
+    {
+        try
+        {
+            var account = user.Accounts.First(a => a.GroupId == groupId);
+            var newExpense = new Expense
+            {
+                Category = category,
+                Amount = amount,
+                Date = DateTime.Now,
+                AccountId = account.Id,
+                Account = account
+            };
+
+            account.Balance -= amount;
+            account.Expenses.Add(newExpense);
+            
+            await userRepository.SaveChangesAsync();
+            
+            return Result<decimal>.Success(account.Balance);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Something went wrong during add expense: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
+            return Result<decimal>.Failure(ex.Message);
+        }
+        
     }
 }

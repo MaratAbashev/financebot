@@ -11,13 +11,11 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Role)
-            .HasConversion<string>()
-            .HasMaxLength(50)
+            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(a => a.SavingStrategy)
-            .HasConversion<string>()
-            .HasMaxLength(50)
+            .HasConversion<int>()
             .IsRequired();
 
         builder.Property(a => a.Balance)

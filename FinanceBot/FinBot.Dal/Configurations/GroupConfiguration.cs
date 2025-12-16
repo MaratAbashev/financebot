@@ -1,5 +1,4 @@
 using FinBot.Domain.Models;
-using FinBot.Domain.Models.SavingModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,8 +15,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
             .IsRequired();
         
         builder.Property(g => g.SavingStrategy)
-            .HasConversion<string>()
-            .HasMaxLength(50)
+            .HasConversion<int>()
             .IsRequired();
 
         builder.HasOne(g => g.Creator)

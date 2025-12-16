@@ -1,5 +1,4 @@
 using FinBot.Domain.Models;
-using FinBot.Domain.Models.SavingModel;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinBot.Dal.DbContexts;
