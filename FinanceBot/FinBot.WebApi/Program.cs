@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FinBot.Bll.Implementation.Requests;
 using FinBot.Dal;
 using FinBot.Dal.DbContexts;
@@ -28,6 +29,12 @@ builder.Host.UseSerilog((context, loggerConfig) =>
         .Enrich.FromLogContext()
         .WriteTo.Console()
         .WriteTo.Seq(context.Configuration["Seq:ServerUrl"] ?? "http://localhost:5341");
+});
+
+// игнорировать циклы при возврате json
+services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
 services.AddPostgresDb(configuration);

@@ -44,8 +44,6 @@ public class GroupService(
                 [
                 ],
                 CreatorId = creator.Id,
-                Creator = creator,
-                Saving = null
             };
 
             var newSaving = new Saving
@@ -55,9 +53,8 @@ public class GroupService(
                 TargetAmount = savingTargetAmount ?? -1,
                 CurrentAmount = 0,
                 IsActive = true,
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.Now.ToUniversalTime(),
                 GroupId = newGroup.Id,
-                Group = newGroup
             };
 
             var newAccount = new Account
@@ -68,16 +65,11 @@ public class GroupService(
                 SavingStrategy = accountSavingStrategy,
                 Balance = dailyUserAllocation,
                 UserId = creator.Id,
-                User = creator,
                 GroupId = newGroup.Id,
-                Group = newGroup
             };
 
             newGroup.Saving = newSaving;
             newGroup.Accounts.Add(newAccount);
-
-            creator.Groups.Add(newGroup);
-            creator.Accounts.Add(newAccount);
 
             await groupRepository.AddAsync(newGroup);
             await groupRepository.SaveChangesAsync();
@@ -86,7 +78,8 @@ public class GroupService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during create group: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
+            logger.LogError("Something went wrong during create group: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
             return Result<Group>.Failure(ex.Message);
         }
     }
@@ -110,7 +103,9 @@ public class GroupService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during recalculate allocations: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
+            logger.LogError(
+                "Something went wrong during recalculate allocations: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
             return Result.Failure(ex.Message);
         }
     }
@@ -123,7 +118,7 @@ public class GroupService(
             saving.Name = savingTargetName;
             saving.TargetAmount = savingTargetAmount;
             saving.CurrentAmount = 0;
-            saving.CreatedAt = DateTime.Now;
+            saving.CreatedAt = DateTime.Now.ToUniversalTime();
 
             savingRepository.Update(saving);
             await savingRepository.SaveChangesAsync();
@@ -132,7 +127,8 @@ public class GroupService(
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during change goal: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
+            logger.LogError("Something went wrong during change goal: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
             return Result<Saving>.Failure(ex.Message);
         }
     }
@@ -158,12 +154,12 @@ public class GroupService(
             }
 
             var user = userResult.Data;
-            
+
             var now = DateTime.Now;
             var daysInMonthLeft = DateTime.DaysInMonth(now.Year, now.Month) - (now.Day - 1);
             var dailyUserAllocation = Math.Round(newUserAllocation / daysInMonthLeft, 2, MidpointRounding.ToZero);
             group.GroupBalance -= dailyUserAllocation;
-            
+
             var newAccount = new Account
             {
                 Role = newUserRole,
@@ -179,16 +175,17 @@ public class GroupService(
 
             user.Accounts.Add(newAccount);
             group.Accounts.Add(newAccount);
-            
+
             await unitOfWork.SaveChangesAsync();
             await transaction.CommitAsync();
-            
+
             return Result<Account>.Success(newAccount);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            logger.LogError("Something went wrong during add user to group: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
+            logger.LogError("Something went wrong during add user to group: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
             return Result<Account>.Failure(ex.Message);
         }
     }

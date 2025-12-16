@@ -48,9 +48,10 @@ namespace FinBot.Dal.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    allocation_strategy = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    allocation_period_months = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    allocation_period_days = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    group_balance = table.Column<decimal>(type: "numeric", nullable: false),
+                    monthly_replenishment = table.Column<decimal>(type: "numeric", nullable: false),
+                    saving_strategy = table.Column<int>(type: "integer", nullable: false),
+                    debt_strategy = table.Column<int>(type: "integer", nullable: false),
                     creator_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -70,10 +71,10 @@ namespace FinBot.Dal.Migrations
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    role = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    allocation_flat = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    allocation_weight = table.Column<int>(type: "integer", nullable: true),
-                    saving_strategy = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    role = table.Column<int>(type: "integer", nullable: false),
+                    daily_allocation = table.Column<decimal>(type: "numeric", nullable: false),
+                    monthly_allocation = table.Column<decimal>(type: "numeric", nullable: false),
+                    saving_strategy = table.Column<int>(type: "integer", nullable: false),
                     balance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     group_id = table.Column<Guid>(type: "uuid", nullable: false)
@@ -105,7 +106,6 @@ namespace FinBot.Dal.Migrations
                     current_amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    owner_id = table.Column<Guid>(type: "uuid", nullable: false),
                     group_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -117,10 +117,26 @@ namespace FinBot.Dal.Migrations
                         principalTable: "groups",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "expense",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    category = table.Column<int>(type: "integer", nullable: false),
+                    amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    account_id = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_expense", x => x.id);
                     table.ForeignKey(
-                        name: "fk_savings_users_owner_id",
-                        column: x => x.owner_id,
-                        principalTable: "users",
+                        name: "fk_expense_accounts_account_id",
+                        column: x => x.account_id,
+                        principalTable: "accounts",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -142,6 +158,11 @@ namespace FinBot.Dal.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "ix_expense_account_id",
+                table: "expense",
+                column: "account_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_groups_creator_id",
                 table: "groups",
                 column: "creator_id");
@@ -149,12 +170,8 @@ namespace FinBot.Dal.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_savings_group_id",
                 table: "savings",
-                column: "group_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_savings_owner_id",
-                table: "savings",
-                column: "owner_id");
+                column: "group_id",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_users_telegram_id",
@@ -167,13 +184,16 @@ namespace FinBot.Dal.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "accounts");
-
-            migrationBuilder.DropTable(
                 name: "dialogs");
 
             migrationBuilder.DropTable(
+                name: "expense");
+
+            migrationBuilder.DropTable(
                 name: "savings");
+
+            migrationBuilder.DropTable(
+                name: "accounts");
 
             migrationBuilder.DropTable(
                 name: "groups");

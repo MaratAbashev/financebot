@@ -9,7 +9,7 @@ namespace FinBot.Dal;
 
 public class UnitOfWork<TContext>(TContext context, ILogger<UnitOfWork<TContext>> logger) : IUnitOfWork<TContext>, IDisposable, IAsyncDisposable where TContext : DbContext
 {
-    public TContext CommonContext { get; }
+    public TContext CommonContext { get; } = context;
     
     public IDbContextTransaction? CurrentTransaction => CommonContext.Database.CurrentTransaction;
 
@@ -35,7 +35,7 @@ public class UnitOfWork<TContext>(TContext context, ILogger<UnitOfWork<TContext>
 
     public void Dispose()
     {
-        CastAndDispose(context);
+        CastAndDispose(CommonContext);
         CastAndDispose(CommonContext);
 
         return;
@@ -51,7 +51,7 @@ public class UnitOfWork<TContext>(TContext context, ILogger<UnitOfWork<TContext>
 
     public async ValueTask DisposeAsync()
     {
-        await context.DisposeAsync();
+        await CommonContext.DisposeAsync();
         await CommonContext.DisposeAsync();
     }
 }

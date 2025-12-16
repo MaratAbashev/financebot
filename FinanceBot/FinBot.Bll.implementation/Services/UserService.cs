@@ -10,13 +10,29 @@ namespace FinBot.Bll.Implementation.Services;
 
 public class UserService(
     IGenericRepository<User, Guid, PDbContext> userRepository,
+    IGenericRepository<Account, int, PDbContext> accountRepository,
+    IGenericRepository<Expense, int, PDbContext> expensesRepository,
+    
     ILogger<UserService> logger) : IUserService
 {
-    public async Task<Result<User?>> GetUserAsync(Predicate<User> predicate)
+    public async Task<Result<User?>> GetUserByTgIdAsync(long id)
     {
         try
         {
-            return Result<User?>.Success(await userRepository.FirstOrDefaultAsync(u => predicate(u)));
+            return Result<User?>.Success(await userRepository.FirstOrDefaultAsync(u => u.TelegramId == id));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Something went wrong during get user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
+            return Result<User?>.Failure(ex.Message);
+        }
+    }
+
+    public async Task<Result<User?>> GetUserByGuidIdAsync(Guid id)
+    {
+        try
+        {
+            return Result<User?>.Success(await userRepository.FirstOrDefaultAsync(u => u.Id == id));
         }
         catch (Exception ex)
         {
@@ -30,7 +46,7 @@ public class UserService(
         try
         {
             var isExist = await userRepository.AnyAsync(u => u.TelegramId == tgId);
-            if (!isExist)
+            if (isExist)
             {
                 return Result<User>.Failure("User with such id already exists", ErrorType.Conflict);
             }
@@ -91,15 +107,16 @@ public class UserService(
             {
                 Category = category,
                 Amount = amount,
-                Date = DateTime.Now,
+                Date = DateTime.Now.ToUniversalTime(),
                 AccountId = account.Id,
-                Account = account
             };
 
             account.Balance -= amount;
             account.Expenses.Add(newExpense);
-            
-            await userRepository.SaveChangesAsync();
+
+            await expensesRepository.AddAsync(newExpense);
+            accountRepository.Update(account);
+            await accountRepository.SaveChangesAsync();
             
             return Result<decimal>.Success(account.Balance);
         }

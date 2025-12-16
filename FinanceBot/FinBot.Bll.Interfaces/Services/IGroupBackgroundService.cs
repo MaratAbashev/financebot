@@ -5,6 +5,6 @@ namespace FinBot.Bll.Interfaces.Services;
 
 public interface IGroupBackgroundService
 {
-    Task<Result> MonthlyGroupRefreshAsync(Group group);
-    Task<Result> DailyAccountsRecalculateAsync(Group group);
+    Task<Result> MonthlyGroupRefreshAsync(Guid groupId);
+    Task<Result> DailyAccountsRecalculateAsync(Guid groupId);
 }

@@ -140,12 +140,12 @@ namespace FinBot.Dal.Migrations
                         .HasColumnName("date");
 
                     b.HasKey("Id")
-                        .HasName("pk_expense");
+                        .HasName("pk_expenses");
 
                     b.HasIndex("AccountId")
-                        .HasDatabaseName("ix_expense_account_id");
+                        .HasDatabaseName("ix_expenses_account_id");
 
-                    b.ToTable("expense", (string)null);
+                    b.ToTable("expenses", (string)null);
                 });
 
             modelBuilder.Entity("FinBot.Domain.Models.Group", b =>
@@ -190,7 +190,7 @@ namespace FinBot.Dal.Migrations
                     b.ToTable("groups", (string)null);
                 });
 
-            modelBuilder.Entity("FinBot.Domain.Models.SavingModel.Saving", b =>
+            modelBuilder.Entity("FinBot.Domain.Models.Saving", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -294,7 +294,7 @@ namespace FinBot.Dal.Migrations
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_expense_accounts_account_id");
+                        .HasConstraintName("fk_expenses_accounts_account_id");
 
                     b.Navigation("Account");
                 });
@@ -311,11 +311,11 @@ namespace FinBot.Dal.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("FinBot.Domain.Models.SavingModel.Saving", b =>
+            modelBuilder.Entity("FinBot.Domain.Models.Saving", b =>
                 {
                     b.HasOne("FinBot.Domain.Models.Group", "Group")
                         .WithOne("Saving")
-                        .HasForeignKey("FinBot.Domain.Models.SavingModel.Saving", "GroupId")
+                        .HasForeignKey("FinBot.Domain.Models.Saving", "GroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_savings_groups_group_id");

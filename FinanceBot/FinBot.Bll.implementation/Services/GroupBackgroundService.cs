@@ -4,17 +4,31 @@ using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
 using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FinBot.Bll.Implementation.Services;
 
-public class GroupBackgroundService(IUnitOfWork<PDbContext> unitOfWork, ILogger<IGroupBackgroundService> logger) : IGroupBackgroundService
+public class GroupBackgroundService(
+    IUnitOfWork<PDbContext> unitOfWork,
+    ILogger<IGroupBackgroundService> logger) : IGroupBackgroundService
 {
-    public async Task<Result> MonthlyGroupRefreshAsync(Group group)
+    public async Task<Result> MonthlyGroupRefreshAsync(Guid groupId)
     {
         await using var transaction = unitOfWork.BeginDbTransaction();
         try
         {
+            var group = await unitOfWork.CommonContext.Groups
+                .Include(g => g.Accounts)
+                    .ThenInclude(a => a.User)
+                .Include(g => g.Saving)
+                .FirstOrDefaultAsync(g => g.Id == groupId);
+
+            if (group == null)
+            {
+                return Result.Failure("Group not found");
+            }
+            
             var saving = group.Saving!;
             var accounts = group.Accounts;
             var replenishment = group.MonthlyReplenishment;
@@ -122,15 +136,26 @@ public class GroupBackgroundService(IUnitOfWork<PDbContext> unitOfWork, ILogger<
         }
     }
 
-    public async Task<Result> DailyAccountsRecalculateAsync(Group group)
+    public async Task<Result> DailyAccountsRecalculateAsync(Guid groupId)
     {
         await using var transaction = unitOfWork.BeginDbTransaction();
         try
         {
+            var group = await unitOfWork.CommonContext.Groups
+                .Include(g => g.Accounts)
+                .ThenInclude(a => a.User)
+                .Include(g => g.Saving)
+                .FirstOrDefaultAsync(g => g.Id == groupId);
+
+            if (group == null)
+            {
+                return Result.Failure("Group not found");
+            }
+            
             var saving = group.Saving!;
             var accounts = group.Accounts;
 
-            foreach (var account in group.Accounts)
+            foreach (var account in accounts)
             {
                 if (account.Balance < 0)
                 {
@@ -159,11 +184,13 @@ public class GroupBackgroundService(IUnitOfWork<PDbContext> unitOfWork, ILogger<
 
             var weight = group.GroupBalance / accounts.Select(a => a.MonthlyAllocation).Sum();
             var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-            foreach (var account in group.Accounts)
+            var daysLeft = daysInMonth - (DateTime.Now.Day - 1);
+            foreach (var account in accounts)
             {
                 account.MonthlyAllocation *= weight;
-                account.DailyAllocation = Math.Round(account.MonthlyAllocation / daysInMonth, 2, MidpointRounding.ToZero);
+                account.DailyAllocation = Math.Round(account.MonthlyAllocation / daysLeft, 2, MidpointRounding.ToZero);
                 account.Balance += account.DailyAllocation;
+                group.GroupBalance -= account.DailyAllocation;
             }
 
             await unitOfWork.SaveChangesAsync();

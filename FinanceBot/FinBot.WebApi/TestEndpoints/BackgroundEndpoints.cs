@@ -26,16 +26,11 @@ public static class BackgroundEndpoints
         IGroupBackgroundService backgroundService,
         IGenericRepository<Group, Guid, PDbContext> repository)
     {
-        var group = await GetGroupWithIncludes(repository, groupId);
-        
-        if (group is null)
-        {
-            return Results.NotFound($"Group with ID {groupId} not found.");
-        }
+        var result = await backgroundService.MonthlyGroupRefreshAsync(groupId);
 
-        await backgroundService.MonthlyGroupRefreshAsync(group);
-
-        return Results.Ok($"Monthly refresh for group {group.Id} triggered successfully.");
+        return result.IsSuccess
+            ? Results.Ok($"Monthly refresh for group {groupId} triggered successfully.")
+            : Results.Problem($"Monthly refresh for group {groupId} triggered failed.");
     }
 
     private static async Task<IResult> TriggerDailyRecalculate(
@@ -43,26 +38,10 @@ public static class BackgroundEndpoints
         IGroupBackgroundService backgroundService,
         IGenericRepository<Group, Guid, PDbContext> repository)
     {
-        var group = await GetGroupWithIncludes(repository, groupId);
+        var result = await backgroundService.DailyAccountsRecalculateAsync(groupId);
 
-        if (group is null)
-        {
-            return Results.NotFound($"Group with ID {groupId} not found.");
-        }
-
-        await backgroundService.DailyAccountsRecalculateAsync(group);
-
-        return Results.Ok($"Daily recalculation for group {group.Id} triggered successfully.");
-    }
-
-    private static async Task<Group?> GetGroupWithIncludes(
-        IGenericRepository<Group, Guid, PDbContext> repository, 
-        Guid groupId)
-    {
-        return await repository.GetAll()
-            .Include(g => g.Accounts)
-                .ThenInclude(a => a.User)
-            .Include(g => g.Saving)
-            .FirstOrDefaultAsync(g => g.Id == groupId);
+        return result.IsSuccess
+            ? Results.Ok($"Daily recalculation for group {groupId} triggered successfully.")
+            : Results.Problem($"Daily recalculation for group {groupId} triggered failed.");
     }
 }

@@ -50,15 +50,13 @@ public static class GroupEndpoints
     }
 
     private static async Task<IResult> NewGroupWithLongUser([FromQuery] long userId, [FromBody] CreateGroupDto dto,
-        IUserService userService, IGroupService groupService)
+        IGroupService groupService, IGenericRepository<User, Guid, PDbContext> userRepository)
     {
-        var userResult = await userService.GetUserAsync(user => user.TelegramId == userId);
-        if (!userResult.IsSuccess)
-        {
-            return Results.Problem(userResult.ErrorMessage);
-        }
-
-        var user = userResult.Data;
+        var user = await userRepository.GetAll()
+            .Include(u => u.Accounts)
+            .Include(u => u.Groups)
+            .FirstOrDefaultAsync(u => u.TelegramId == userId);
+        
         if (user is null)
         {
             return Results.NotFound("User not found");
@@ -76,20 +74,17 @@ public static class GroupEndpoints
     }
 
     private static async Task<IResult> NewGroupWithGuidUser([FromQuery] Guid userId, [FromBody] CreateGroupDto dto,
-        IUserService userService, IGroupService groupService)
+        IGroupService groupService, IGenericRepository<User, Guid, PDbContext> userRepository)
     {
-        var userResult = await userService.GetUserAsync(user => user.Id == userId);
-        if (!userResult.IsSuccess)
-        {
-            return Results.Problem(userResult.ErrorMessage);
-        }
+        var user = await userRepository.GetAll()
+            .Include(u => u.Accounts)
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
-        var user = userResult.Data;
         if (user is null)
         {
             return Results.NotFound("User not found");
         }
-
+        
         var newGroupResult = await groupService.CreateGroupAsync(dto.GroupName, user, dto.Replenishment,
             dto.GroupSavingStrategy, dto.AccountSavingStrategy, dto.DebtStrategy, dto.SavingTargetName,
             dto.SavingTargetAmount);

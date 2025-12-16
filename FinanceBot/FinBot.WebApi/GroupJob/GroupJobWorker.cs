@@ -13,16 +13,7 @@ public class GroupJobWorker(
 {
     public async Task ProcessMonthlyAsync(Guid groupId)
     {
-        var group = await repository.GetAll()
-            .Include(g => g.Accounts)
-            .ThenInclude(a => a.User)
-            .Include(g => g.Saving)
-            .Where(g => g.Id == groupId)
-            .FirstOrDefaultAsync();
-        
-        if (group == null) return;
-        
-        var serviceResult = await service.MonthlyGroupRefreshAsync(group);
+        var serviceResult = await service.MonthlyGroupRefreshAsync(groupId);
         if (!serviceResult.IsSuccess)
         {
             logger.LogError("Failed to process monthly job for group {id}", groupId);
@@ -35,16 +26,7 @@ public class GroupJobWorker(
     
     public async Task ProcessDailyAsync(Guid groupId)
     {
-        var group = await repository.GetAll()
-            .Include(g => g.Accounts)
-            .ThenInclude(a => a.User)
-            .Include(g => g.Saving)
-            .Where(g => g.Id == groupId)
-            .FirstOrDefaultAsync();
-        
-        if (group == null) return;
-
-        var serviceResult = await service.DailyAccountsRecalculateAsync(group);
+        var serviceResult = await service.DailyAccountsRecalculateAsync(groupId);
         if (!serviceResult.IsSuccess)
         {
             logger.LogError("Failed to process daily job for group {id}", groupId);

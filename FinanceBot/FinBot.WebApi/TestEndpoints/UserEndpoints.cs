@@ -1,7 +1,10 @@
+using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Services;
+using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
 using FinBot.Domain.Models.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinBot.WebApi.TestEndpoints;
 
@@ -13,7 +16,7 @@ public static class UserEndpoints
             .WithTags("Users")
             .WithOpenApi();
 
-        group.MapGet("/{tgId:long}", GetUserTg)
+        group.MapGet("/{id:long}", GetUserTg)
             .WithName("GetUserTg")
             .Produces<User>()
             .Produces(StatusCodes.Status404NotFound);
@@ -32,7 +35,7 @@ public static class UserEndpoints
             .WithName("GetOrCreateUser")
             .Produces<User>();
 
-        group.MapPost("/{tgId:long}/expenses", AddExpense)
+        group.MapPost("/{id:long}/expenses", AddExpense)
             .WithName("AddUserExpense")
             .Produces<decimal>()
             .Produces(StatusCodes.Status404NotFound)
@@ -41,41 +44,37 @@ public static class UserEndpoints
     
 
     private static async Task<IResult> GetUserTg(
-        long tgId, 
-        IUserService userService)
+        long id, 
+        IGenericRepository<User, Guid, PDbContext> userRepository)
     {
-        var result = await userService.GetUserAsync(u => u.TelegramId == tgId);
+        var user = await userRepository.GetAll()
+            .Include(u => u.Accounts)
+            .Include(u => u.Groups)
+            .FirstOrDefaultAsync(u => u.TelegramId == id);
 
-        if (!result.IsSuccess)
-        {
-            return Results.Problem(result.ErrorMessage);
-        }
-
-        if (result.Data == null)
+        if (user == null)
         {
             return Results.NotFound("User not found");
         }
 
-        return Results.Ok(result.Data);
+        return Results.Ok(user);
     }
     
     private static async Task<IResult> GetUserGuid(
         Guid id, 
-        IUserService userService)
+        IGenericRepository<User, Guid, PDbContext> userRepository)
     {
-        var result = await userService.GetUserAsync(u => u.Id == id);
-        
-        if (!result.IsSuccess)
-        {
-            return Results.Problem(result.ErrorMessage);
-        }
+        var user = await userRepository.GetAll()
+            .Include(u => u.Accounts)
+            .Include(u => u.Groups)
+            .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (result.Data == null)
+        if (user == null)
         {
             return Results.NotFound("User not found");
         }
 
-        return Results.Ok(result.Data);
+        return Results.Ok(user);
     }
 
     private static async Task<IResult> CreateUser(
@@ -104,19 +103,18 @@ public static class UserEndpoints
     }
 
     private static async Task<IResult> AddExpense(
-        long tgId, 
-        [FromBody] AddExpenseRequest request, 
-        IUserService userService)
+        long id, 
+        [FromBody] AddExpenseRequest request,
+        IUserService userService,
+        IGenericRepository<User, Guid, PDbContext> userRepository)
     {
-        var userResult = await userService.GetUserAsync(u => u.TelegramId == tgId);
+        var user = await userRepository.GetAll()
+            .Include(u => u.Accounts)
+            .ThenInclude(a => a.Expenses)
+            .Include(u => u.Groups)
+            .FirstOrDefaultAsync(u => u.TelegramId == id);
 
-        if (!userResult.IsSuccess)
-        {
-            return Results.Problem(userResult.ErrorMessage);
-        }
-        
-        var user = userResult.Data;
-        if (user is null)
+        if (user == null)
         {
             return Results.NotFound("User not found");
         }
