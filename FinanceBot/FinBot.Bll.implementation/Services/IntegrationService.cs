@@ -1,3 +1,4 @@
+using System.Globalization;
 using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Integration;
 using FinBot.Domain.Utils;
@@ -9,9 +10,9 @@ public class IntegrationService(
     IExcelTableService excelTableService
     ) : IIntegrationsService
 {
-    public async Task<Result> GenerateExcelTableForGroup(Guid groupId, int months)
+    public async Task<Result> GenerateExcelTableForGroup(Guid groupId)
     {
-        var tableName = GenerateFileName(groupId, null, months, "xlsx");
+        var tableName = GenerateFileName(groupId, null, "xlsx");
 
         var tableExistsResult = await minioStorage.CheckIfTableExistsAsync(tableName);
         if (!tableExistsResult.IsSuccess)
@@ -25,7 +26,7 @@ public class IntegrationService(
             return Result.Success();
         }
         
-        var createTableResult = await excelTableService.ExportToExcelForGroupAsync(groupId, months);
+        var createTableResult = await excelTableService.ExportToExcelForGroupAsync(groupId);
         if (!createTableResult.IsSuccess)
         {
             return createTableResult.SameFailure();
@@ -40,9 +41,9 @@ public class IntegrationService(
         return Result.Success();
     }
 
-    public async Task<Result> GenerateExcelTableForUserInGroup(Guid userId, Guid groupId, int months)
+    public async Task<Result> GenerateExcelTableForUserInGroup(Guid userId, Guid groupId)
     {
-        var tableName = GenerateFileName(groupId, null, months, "xlsx");
+        var tableName = GenerateFileName(groupId, null, "xlsx");
 
         var tableExistsResult = await minioStorage.CheckIfTableExistsAsync(tableName);
         if (!tableExistsResult.IsSuccess)
@@ -56,7 +57,7 @@ public class IntegrationService(
             return Result.Success();
         }
         
-        var createTableResult = await excelTableService.ExportToExcelForUserInGroupAsync(userId, groupId, months);
+        var createTableResult = await excelTableService.ExportToExcelForUserInGroupAsync(userId, groupId);
         if (!createTableResult.IsSuccess)
         {
             return createTableResult.SameFailure();
@@ -71,43 +72,29 @@ public class IntegrationService(
         return Result.Success();
     }
 
-    public async Task<Result<byte[]>> GetExcelTableForGroup(Guid groupId, int months)
+    public async Task<Result<byte[]>> GetExcelTableForGroup(Guid groupId)
     {
-        var tableName = GenerateFileName(groupId, null, months, "xlsx");
+        var tableName = GenerateFileName(groupId, null, "xlsx");
 
         return await minioStorage.GetExcelTableAsync(tableName);
     }
+    
 
-    public async Task<Result<byte[]>> GetExcelTableForUserInGroup(Guid userId, Guid groupId, int months)
+    public async Task<Result<byte[]>> GetExcelTableForUserInGroup(Guid userId, Guid groupId)
     {
-        var tableName = GenerateFileName(groupId, userId, months, "xlsx");
+        var tableName = GenerateFileName(groupId, userId, "xlsx");
         
         return await minioStorage.GetExcelTableAsync(tableName);
     }
 
-    private string GenerateFileName(Guid groupId, Guid? userId, int months, string extension)
+    private string GenerateFileName(Guid groupId, Guid? userId, string extension)
     {
         var dateNow = DateTime.Now;
-        string fileName;
 
-        var finishDateStr = dateNow.ToString("yyyyMM");
-
-        if (months == 1)
-        {
-            fileName = userId is not null
-                ? $"{groupId}_{userId}_{finishDateStr}.{extension}"
-                : $"{groupId}_{finishDateStr}.{extension}";
-        }
-        else
-        {
-            var startDate = dateNow.AddMonths(-(months - 1));
-            var startDateStr = startDate.ToString("yyyyMM");
-
-            fileName = userId is not null
-            ? $"{groupId}_{userId}_{startDateStr}_{finishDateStr}.{extension}"
-            : $"{groupId}_{startDateStr}_{finishDateStr}.{extension}";
-        }
+        var DateStr = dateNow.ToString("yyyyMMdd");
         
-        return fileName;
+        return userId is not null
+            ? $"{groupId}_{userId}_{DateStr}.{extension}"
+            : $"{groupId}_{DateStr}.{extension}";
     }
 }

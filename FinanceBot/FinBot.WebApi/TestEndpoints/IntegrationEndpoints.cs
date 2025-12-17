@@ -18,12 +18,11 @@ public static class IntegrationEndpoints
         mapGroup.MapPost("/Table/Generate", GenerateTable);
     }
 
-    private static async Task<IResult> GetTable(IIntegrationsService integrationsService, [FromQuery] Guid groupId,
-        [FromQuery] int months, [FromQuery] Guid? userId)
+    private static async Task<IResult> GetTable(IIntegrationsService integrationsService, [FromQuery] Guid groupId, [FromQuery] Guid? userId)
     {
         var result = userId is null
-            ? await integrationsService.GetExcelTableForGroup(groupId, months)
-            : await integrationsService.GetExcelTableForUserInGroup(userId.Value, groupId, months);
+            ? await integrationsService.GetExcelTableForGroup(groupId)
+            : await integrationsService.GetExcelTableForUserInGroup(userId.Value, groupId);
         
         
         return result.IsSuccess
@@ -35,12 +34,11 @@ public static class IntegrationEndpoints
             : Results.Problem(result.ErrorMessage);
     }
     
-    private static async Task<IResult> GenerateTable(IIntegrationsService integrationsService, [FromQuery] Guid groupId,
-        [FromQuery] int months, [FromQuery] Guid? userId)
+    private static async Task<IResult> GenerateTable(IIntegrationsService integrationsService, [FromQuery] Guid groupId, [FromQuery] Guid? userId)
     {
         var result = userId is null
-            ? await integrationsService.GenerateExcelTableForGroup(groupId, months)
-            : await integrationsService.GenerateExcelTableForUserInGroup(userId.Value, groupId, months);
+            ? await integrationsService.GenerateExcelTableForGroup(groupId)
+            : await integrationsService.GenerateExcelTableForUserInGroup(userId.Value, groupId);
         
         return result.IsSuccess
             ? Results.Ok()

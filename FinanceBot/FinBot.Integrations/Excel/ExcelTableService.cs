@@ -26,7 +26,7 @@ public class ExcelTableService : IExcelTableService
         ExcelPackage.License.SetNonCommercialPersonal("My PC");
     }
 
-    public async Task<Result<byte[]>> ExportToExcelForGroupAsync(Guid groupId, int months)
+    public async Task<Result<byte[]>> ExportToExcelForGroupAsync(Guid groupId)
     {
         try
         {
@@ -37,7 +37,7 @@ public class ExcelTableService : IExcelTableService
                 .OrderByDescending(e => e.Date)
                 .ToListAsync();
             
-            return Result<byte[]>.Success(await ExportToExcelAsync(expenses, months));
+            return Result<byte[]>.Success(await ExportToExcelAsync(expenses));
         }
         catch (Exception ex)
         {
@@ -46,7 +46,7 @@ public class ExcelTableService : IExcelTableService
         }
     }
 
-    public async Task<Result<byte[]>> ExportToExcelForUserInGroupAsync(Guid userId, Guid groupId, int months)
+    public async Task<Result<byte[]>> ExportToExcelForUserInGroupAsync(Guid userId, Guid groupId)
     {
         try
         {
@@ -57,7 +57,7 @@ public class ExcelTableService : IExcelTableService
                 .OrderByDescending(e => e.Date)
                 .ToListAsync();
             
-            return Result<byte[]>.Success(await ExportToExcelAsync(expenses, months));
+            return Result<byte[]>.Success(await ExportToExcelAsync(expenses));
         }
         catch (Exception ex)
         {
@@ -66,7 +66,7 @@ public class ExcelTableService : IExcelTableService
         }
     }
     
-    private async Task<byte[]> ExportToExcelAsync(List<Expense> expenses, int months)
+    private async Task<byte[]> ExportToExcelAsync(List<Expense> expenses)
     {
         var expenseRecords = ExpenseExcelRecord.GetExpenseRecords(expenses);
     
@@ -74,20 +74,15 @@ public class ExcelTableService : IExcelTableService
     
         var today = DateTime.Today;
         var culture = CultureInfo.GetCultureInfo("ru-RU");
+    
+        var expensesForMonth = expenseRecords
+            .Where(r => r.Date.Year == today.Year && r.Date.Month == today.Month)
+            .ToList();
 
-        for (int i = 0; i < months; i++)
-        {
-            var targetDate = today.AddMonths(-i);
-        
-            var expensesForMonth = expenseRecords
-                .Where(r => r.Date.Year == targetDate.Year && r.Date.Month == targetDate.Month)
-                .ToList();
+        var monthName = today.ToString("MMMM yyyy", culture);
+        var sheetName = culture.TextInfo.ToTitleCase(monthName);
 
-            var monthName = targetDate.ToString("MMMM yyyy", culture);
-            var sheetName = culture.TextInfo.ToTitleCase(monthName);
-
-            AddSheetFromData(package, sheetName, expensesForMonth);
-        }
+        AddSheetFromData(package, sheetName, expensesForMonth);
 
         return await package.GetAsByteArrayAsync();
     }
