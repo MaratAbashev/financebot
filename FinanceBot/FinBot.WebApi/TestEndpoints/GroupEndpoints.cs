@@ -44,9 +44,15 @@ public static class GroupEndpoints
 
         mapGroup.MapPost("/AddUser", AddUser)
             .Produces<Account>();
+        
+        mapGroup.MapPost("/RemoveUser", RemoveUser)
+            .Produces<Account>();
 
         mapGroup.MapPatch("/ChangeGoal", ChangeGoal)
             .Produces<Saving>();
+        
+        mapGroup.MapPatch("/", UpdateGroup)
+            .Produces<Group>();
     }
 
     private static async Task<IResult> NewGroupWithLongUser([FromQuery] long userId, [FromBody] CreateGroupDto dto,
@@ -132,8 +138,12 @@ public static class GroupEndpoints
             return Results.NotFound("Group not found");
         }
 
-        var addUserResult = await groupService.AddUserToGroupAsync(group, dto.UserTgId, dto.UserDisplayName,
-            dto.UserRole, dto.OldUsersAllocations, dto.NewUserAllocation, dto.UserSavingStrategy);
+        var addUserResult = await groupService.AddUserToGroupAsync(group,
+            dto.UserId,
+            dto.UserRole,
+            dto.OldUsersAllocations,
+            dto.NewUserAllocation,
+            dto.UserSavingStrategy);
         if (!addUserResult.IsSuccess)
         {
             return Results.Problem(addUserResult.ErrorMessage);
@@ -142,6 +152,26 @@ public static class GroupEndpoints
         var newUserAccount = addUserResult.Data;
 
         return Results.Ok(newUserAccount);
+    }
+    
+    private static async Task<IResult> RemoveUser([FromQuery] Guid groupId, [FromBody] RemoveUserDto dto,
+        IGenericRepository<Group, Guid, PDbContext> repository, IGroupService groupService)
+    {
+        var group = await repository.GetAll()
+            .Include(g => g.Accounts)
+                .ThenInclude(a => a.User)
+            .Include(g => g.Saving)
+            .FirstOrDefaultAsync(g => g.Id == groupId);
+
+        if (group == null)
+        {
+            return Results.NotFound("Group not found");
+        }
+
+        var removeUserResult = await groupService.RemoveUserFromGroupAsync(group, dto.UserTgId, dto.OldUsersAllocations);
+        return removeUserResult.IsSuccess
+            ? Results.Ok()
+            : Results.Problem(removeUserResult.ErrorMessage);
     }
     
     private static async Task<IResult> ChangeGoal([FromQuery] Guid groupId, [FromQuery] string targetName,
@@ -165,6 +195,27 @@ public static class GroupEndpoints
             ? Results.Ok(serviceResult.Data)
             : Results.Problem(serviceResult.ErrorMessage);
     }
+
+    private static async Task<IResult> UpdateGroup(Guid groupId, [FromBody] UpdateGroupDto dto,
+        IGenericRepository<Group, Guid, PDbContext> repository)
+    {
+        var group = await repository.FirstOrDefaultAsync(g => g.Id == groupId);
+
+        if (group == null)
+        {
+            return Results.NotFound("Group not found");
+        }
+        
+        group.Name = dto.Name ?? group.Name;
+        group.MonthlyReplenishment = dto.MonthlyReplenishment ?? group.MonthlyReplenishment;
+        group.SavingStrategy = dto.SavingStrategy ?? group.SavingStrategy;
+        group.DebtStrategy = dto.DebtStrategy ?? group.DebtStrategy;
+        
+        repository.Update(group);
+        await repository.SaveChangesAsync();
+
+        return Results.Ok(group);
+    }
 }
 
 public record CreateGroupDto(
@@ -179,9 +230,18 @@ public record CreateGroupDto(
 public record RecalculateAllocationsDto(decimal[] Allocations);
 
 public record AddUserToGroupDto(
-    long UserTgId,
-    string UserDisplayName,
+    Guid UserId,
     Role UserRole,
     decimal[] OldUsersAllocations,
     decimal NewUserAllocation,
     SavingStrategy UserSavingStrategy);
+    
+public record UpdateGroupDto(
+    string? Name,
+    decimal? MonthlyReplenishment,
+    SavingStrategy? SavingStrategy,
+    DebtStrategy? DebtStrategy);
+    
+public record RemoveUserDto(
+    long UserTgId,
+    decimal[] OldUsersAllocations);

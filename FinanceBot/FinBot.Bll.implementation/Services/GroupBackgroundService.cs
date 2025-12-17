@@ -1,7 +1,6 @@
 using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Services;
 using FinBot.Dal.DbContexts;
-using FinBot.Domain.Models;
 using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -58,7 +57,10 @@ public class GroupBackgroundService(
                 }
             }
 
-            // todo: Проверка на достижение цели
+            if (saving.TargetAmount >= saving.CurrentAmount)
+            {
+                saving.IsActive = false;
+            }
 
             if (group.GroupBalance < 0)
             {
@@ -118,7 +120,7 @@ public class GroupBackgroundService(
             var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
             foreach (var account in group.Accounts)
             {
-                account.MonthlyAllocation *= weight;
+                account.MonthlyAllocation = Math.Round(account.MonthlyAllocation * weight, 2, MidpointRounding.ToZero);
                 account.DailyAllocation = Math.Round(account.MonthlyAllocation / daysInMonth, 2, MidpointRounding.ToZero);
                 account.Balance += account.DailyAllocation;
             }
@@ -180,14 +182,17 @@ public class GroupBackgroundService(
                 }
             }
 
-            // todo: Проверка на достижение цели
+            if (saving.TargetAmount >= saving.CurrentAmount)
+            {
+                saving.IsActive = false;
+            }
 
             var weight = group.GroupBalance / accounts.Select(a => a.MonthlyAllocation).Sum();
             var daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
             var daysLeft = daysInMonth - (DateTime.Now.Day - 1);
             foreach (var account in accounts)
             {
-                account.MonthlyAllocation *= weight;
+                account.MonthlyAllocation = Math.Round(account.MonthlyAllocation * weight, 2, MidpointRounding.ToZero);
                 account.DailyAllocation = Math.Round(account.MonthlyAllocation / daysLeft, 2, MidpointRounding.ToZero);
                 account.Balance += account.DailyAllocation;
                 group.GroupBalance -= account.DailyAllocation;

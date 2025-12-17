@@ -24,10 +24,14 @@ public interface IGroupService
     
     Task<Result<Account>> AddUserToGroupAsync(
         Group group,
-        long newUserTgId,
-        string newUserDisplayName,
+        Guid userId,
         Role newUserRole,
-        decimal[] oldUserAllocations,
+        decimal[] oldUsersAllocations,
         decimal newUserAllocation,
         SavingStrategy newUserSavingStrategy);
+
+    Task<Result> RemoveUserFromGroupAsync(
+        Group group,
+        long userTgId,
+        decimal[] leftUsersAllocations);
 }

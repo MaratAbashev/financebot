@@ -10,11 +10,13 @@ public class DialogConfiguration: IEntityTypeConfiguration<DialogContext>
     public void Configure(EntityTypeBuilder<DialogContext> builder)
     {
         builder.HasKey(d => d.Id);
+        
         builder.Property(d => d.Id)
             .ValueGeneratedOnAdd();
         
         builder.HasIndex(d => d.UserId)
             .IsUnique();
+        
         builder.Property(d => d.UserId)
             .IsRequired();
         

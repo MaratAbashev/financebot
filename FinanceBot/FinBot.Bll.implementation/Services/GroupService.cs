@@ -4,6 +4,7 @@ using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
 using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FinBot.Bll.Implementation.Services;
@@ -49,7 +50,7 @@ public class GroupService(
             var newSaving = new Saving
             {
                 Id = Guid.NewGuid(),
-                Name = savingTargetName,
+                Name = savingTargetName ?? "None",
                 TargetAmount = savingTargetAmount ?? -1,
                 CurrentAmount = 0,
                 IsActive = true,
@@ -88,6 +89,7 @@ public class GroupService(
     {
         try
         {
+            unitOfWork.CommonContext.Attach(group);
             var accounts = group.Accounts.OrderBy(a => a.Id).ToList();
             var now = DateTime.Now;
             var daysInMonthLeft = DateTime.DaysInMonth(now.Year, now.Month) - (now.Day - 1);
@@ -115,9 +117,13 @@ public class GroupService(
         try
         {
             var saving = group.Saving!;
+            var leftover = saving.TargetAmount >= saving.CurrentAmount
+                ? saving.TargetAmount - saving.CurrentAmount
+                : saving.CurrentAmount;
+            
             saving.Name = savingTargetName;
             saving.TargetAmount = savingTargetAmount;
-            saving.CurrentAmount = 0;
+            saving.CurrentAmount = leftover;
             saving.CreatedAt = DateTime.Now.ToUniversalTime();
 
             savingRepository.Update(saving);
@@ -135,8 +141,7 @@ public class GroupService(
 
     public async Task<Result<Account>> AddUserToGroupAsync(
         Group group,
-        long newUserTgId,
-        string newUserDisplayName,
+        Guid userId,
         Role newUserRole,
         decimal[] oldUserAllocations,
         decimal newUserAllocation, SavingStrategy newUserSavingStrategy)
@@ -146,14 +151,14 @@ public class GroupService(
         {
             await RecalculateMonthlyAllocationsAsync(group, oldUserAllocations);
 
-            var userResult = await userService.GetOrCreateUserAsync(newUserTgId, newUserDisplayName);
-            if (!userResult.IsSuccess)
+            var user = await unitOfWork.CommonContext.Users
+                .Include(u => u.Accounts)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            
+            if (user is null)
             {
-                await transaction.RollbackAsync();
-                return userResult.SameFailure<Account>();
+                return Result<Account>.Failure("User not found", ErrorType.NotFound);
             }
-
-            var user = userResult.Data;
 
             var now = DateTime.Now;
             var daysInMonthLeft = DateTime.DaysInMonth(now.Year, now.Month) - (now.Day - 1);
@@ -187,6 +192,39 @@ public class GroupService(
             logger.LogError("Something went wrong during add user to group: {errorMessage}\nErrorStack{errorStack}",
                 ex.Message, ex.StackTrace);
             return Result<Account>.Failure(ex.Message);
+        }
+    }
+
+    public async Task<Result> RemoveUserFromGroupAsync(Group group, long userTgId, decimal[] leftUsersAllocations)
+    {
+        await using var transaction = unitOfWork.BeginDbTransaction();
+        {
+            try
+            {
+                unitOfWork.CommonContext.Attach(group);
+                var userAccount = group.Accounts.FirstOrDefault(a => a.User!.TelegramId == userTgId);
+                if (userAccount is null)
+                {
+                    return Result.Failure("User not found", ErrorType.NotFound);
+                }
+                
+                group.Accounts.Remove(userAccount);
+                
+                var recalculateResult = await RecalculateMonthlyAllocationsAsync(group, leftUsersAllocations);
+                if (!recalculateResult.IsSuccess)
+                {
+                    throw new Exception($"Failed to recalculate allocations: {recalculateResult.ErrorMessage}");
+                }
+                
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                logger.LogError("Something went wrong during remove user from group: {errorMessage}\nErrorStack{errorStack}",
+                    ex.Message, ex.StackTrace);
+                return Result.Failure(ex.Message);
+            }
         }
     }
 }
