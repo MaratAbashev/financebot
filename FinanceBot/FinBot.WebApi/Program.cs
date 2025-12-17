@@ -44,6 +44,7 @@ services.AddBll(configuration);
 services.AddHangfire(configuration);
 services.AddOpenApi();
 services.AddMinioS3(configuration);
+services.AddExcel();
 
 var app = builder.Build();
 
@@ -65,6 +66,7 @@ if (app.Environment.IsDevelopment())
     app.MapUserEndpoints();
     app.MapGroupEndpoints();
     app.MapBackgroundEndpoints();
+    app.MapIntegrationEndpoints();
 }
 
 AddDailyJob(app);

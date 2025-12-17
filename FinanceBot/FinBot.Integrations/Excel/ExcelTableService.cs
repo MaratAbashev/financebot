@@ -32,6 +32,7 @@ public class ExcelTableService : IExcelTableService
         {
             var expenses = await _repository.GetAll()
                 .Include(e => e.Account)
+                .ThenInclude(a => a!.User)
                 .Where(e => e.Account!.GroupId == groupId)
                 .OrderByDescending(e => e.Date)
                 .ToListAsync();
@@ -51,6 +52,7 @@ public class ExcelTableService : IExcelTableService
         {
             var expenses = await _repository.GetAll()
                 .Include(e => e.Account)
+                .ThenInclude(a => a!.User)
                 .Where(e => e.Account!.GroupId == groupId && e.Account!.UserId == userId)
                 .OrderByDescending(e => e.Date)
                 .ToListAsync();

@@ -38,7 +38,7 @@ public class ExpenseExcelRecord
         return expenses.Select((x, i) =>
         {
             var expense = GetExpenseRecord(x);
-            expense.Id = i;
+            expense.Id = i + 1;
             return expense;
         }).ToList();
     }
