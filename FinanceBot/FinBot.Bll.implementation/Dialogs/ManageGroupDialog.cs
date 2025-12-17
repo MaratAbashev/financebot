@@ -8,7 +8,7 @@ namespace FinBot.Bll.Implementation.Dialogs;
 
 public class ManageGroupDialog(
     ITelegramBotClient botClient,
-    ILogger<CreateGroupDialog> logger) : IDialogDefinition
+    ILogger<ManageGroupDialog> logger) : IDialogDefinition
 {
     public string DialogName => nameof(ManageGroupDialog);
 

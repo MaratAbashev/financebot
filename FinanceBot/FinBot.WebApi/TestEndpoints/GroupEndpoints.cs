@@ -132,10 +132,15 @@ public static class GroupEndpoints
             .ThenInclude(a => a.User)
             .Include(g => g.Saving)
             .FirstOrDefaultAsync(g => g.Id == groupId);
-
+        
         if (group == null)
         {
             return Results.NotFound("Group not found");
+        }
+
+        if (group.Accounts.Any(a => a.User!.Id == dto.UserId))
+        {
+            return Results.Ok("User already added");
         }
 
         var addUserResult = await groupService.AddUserToGroupAsync(group,
