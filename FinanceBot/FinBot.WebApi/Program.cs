@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using FinBot.Bll.Implementation.Requests;
 using FinBot.Dal;
 using FinBot.Dal.DbContexts;
+using FinBot.Integrations;
 using FinBot.WebApi;
 using FinBot.WebApi.Extensions;
 using FinBot.WebApi.GroupJob;
@@ -42,6 +43,7 @@ services.AddTelegram(configuration);
 services.AddBll(configuration);
 services.AddHangfire(configuration);
 services.AddOpenApi();
+services.AddMinioS3(configuration);
 
 var app = builder.Build();
 

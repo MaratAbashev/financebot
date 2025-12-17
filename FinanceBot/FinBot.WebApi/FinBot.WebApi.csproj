@@ -11,6 +11,7 @@
       <ProjectReference Include="..\FinBot.Bll.Implementation\FinBot.Bll.Implementation.csproj" />
       <ProjectReference Include="..\FinBot.Dal\FinBot.Dal.csproj" />
       <ProjectReference Include="..\FinBot.Domain\FinBot.Domain.csproj" />
+      <ProjectReference Include="..\FinBot.Integrations\FinBot.Integrations.csproj" />
     </ItemGroup>
 
     <ItemGroup>
