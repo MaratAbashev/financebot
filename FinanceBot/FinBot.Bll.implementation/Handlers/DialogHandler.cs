@@ -6,6 +6,7 @@ using FinBot.Domain.Models;
 using FinBot.Domain.Utils;
 using MediatR;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace FinBot.Bll.Implementation.Handlers;
@@ -25,8 +26,10 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
         dialogContext.UserId = request.UserId;
         dialogContext.CurrentStep = 0;
         dialogContext.PrevStep = -1;
-        await dialogDefinition.Steps[dialogContext.CurrentStep]
-            .PromptAsync(botClient, request.UserId, dialogContext, cancellationToken);
+        var step = dialogDefinition.Steps[dialogContext.CurrentStep];
+        if (!await TryPrompt(request.UserId, step, request.Update, dialogContext, cancellationToken))
+            return;
+
         if (dialogContext.Id == 0)
         {
             await dialogRepository.AddAsync(dialogContext);
@@ -38,7 +41,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
         
         await dialogRepository.SaveChangesAsync();
     }
-    
+
     public async Task Handle(ProcessDialogRequest request, CancellationToken cancellationToken)
     {
         var update = request.Update;
@@ -57,21 +60,24 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
             dialogContext.DialogStorage?.Remove(dialogDefinition.Steps[dialogContext.CurrentStep].Key);
             dialogContext.CurrentStep = prevStepIndex;
             dialogContext.PrevStep = prevStep.PrevStepId(dialogContext);
-            await prevStep
-                .PromptAsync(botClient, query.From.Id, dialogContext, cancellationToken);
+            if (!await TryPrompt(query.From.Id, prevStep, update, dialogContext, cancellationToken))
+                return;
+            dialogRepository.Update(dialogContext);
             await dialogRepository.SaveChangesAsync();
             return;
         }
-        
-        var handleResult = await dialogDefinition.Steps[dialogContext.CurrentStep]
+
+        var handleStep = dialogDefinition.Steps[dialogContext.CurrentStep];
+        var handleResult = await handleStep
             .HandleAsync(botClient, update, dialogContext, cancellationToken);
         if (handleResult is { IsSuccess: false, ErrorMessage: not null, ErrorType: ErrorType.Validation })
         {
             await botClient.SendMessage(dialogContext.UserId, 
                 handleResult.ErrorMessage,
                 parseMode: ParseMode.MarkdownV2, cancellationToken: cancellationToken);
-            await dialogDefinition.Steps[dialogContext.CurrentStep]
-                .PromptAsync(botClient, dialogContext.UserId, dialogContext, cancellationToken);
+            if (!await TryPrompt(dialogContext.UserId, handleStep, update, dialogContext, cancellationToken))
+                return;
+            dialogRepository.Update(dialogContext);
             await dialogRepository.SaveChangesAsync();
             return;
         }
@@ -81,14 +87,20 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
             return;
         }
 
-        var nextStepId = dialogDefinition.Steps[dialogContext.CurrentStep]
+        var nextStepId = handleStep
             .NextStepId(dialogContext);
         if (dialogDefinition
             .Steps
             .TryGetValue(nextStepId, out var nextStep))
         {
-            await nextStep.PromptAsync(botClient, dialogContext.UserId, dialogContext, cancellationToken);
+            var prevStep = dialogContext.PrevStep;
             (dialogContext.PrevStep, dialogContext.CurrentStep) = (dialogContext.CurrentStep, nextStepId);
+            if (!await TryPrompt(dialogContext.UserId, nextStep, update, dialogContext, cancellationToken))
+            {
+                (dialogContext.PrevStep, dialogContext.CurrentStep) = (prevStep, dialogContext.PrevStep);
+                return;
+            }
+            dialogRepository.Update(dialogContext);
             await dialogRepository.SaveChangesAsync();
             return;
         }
@@ -99,5 +111,16 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
             dialogRepository.Delete(dialogContext);
             await dialogRepository.SaveChangesAsync();
         }
+    }
+    
+    private async Task<bool> TryPrompt(long userId, IStep step, Update update,
+        DialogContext dialogContext, CancellationToken cancellationToken)
+    {
+        var promptResult = await step
+            .PromptAsync(botClient, userId, dialogContext, cancellationToken);
+        if (promptResult.IsSuccess) return true;
+        if (step.OnPromptFailed != null)
+            await step.OnPromptFailed(promptResult, userId, update, dialogContext);
+        return false;
     }
 }

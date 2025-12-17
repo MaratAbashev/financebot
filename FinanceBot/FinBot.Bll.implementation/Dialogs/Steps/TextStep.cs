@@ -9,33 +9,34 @@ namespace FinBot.Bll.Implementation.Dialogs.Steps;
 
 public class TextStep<T>(
     string key,
-    string question, 
+    string promptTemplate,
     Func<DialogContext, int> nextStepId,
     Func<DialogContext, int> prevStepId,
-    bool isFirstStep = false): IStep where T: IConvertible 
+    Func<DialogContext, Task<Result<IEnumerable<string>>>>? dataLoader = null,
+    bool isFirstStep = false,
+    Func<T, Result>? validate = null,
+    Func<Result, long, Update, DialogContext, Task>? onPromptFailed = null
+    ): DataStep(key, nextStepId, prevStepId, dataLoader, isFirstStep, onPromptFailed) where T: IConvertible 
 {
-    private readonly Func<T, Result>? _validate;
-    public bool IsFirstStep { get; init; } = isFirstStep;
-    public string Key { get; init; } = key;
-    public Func<DialogContext, int> NextStepId { get; init; } = nextStepId;
-    public Func<DialogContext, int> PrevStepId { get; init; } = prevStepId;
-
-    public TextStep(string key, string question, Func<DialogContext, int> nextStepId, Func<DialogContext, int> prevStepId, Func<T, Result> validate, bool isFirstStep = false): this(key, question, nextStepId, prevStepId, isFirstStep)
+    public override async Task<Result> PromptAsync(ITelegramBotClient client, long chatId, DialogContext dialogContext, CancellationToken cancellationToken)
     {
-        _validate = validate;
-    }
-    public async Task PromptAsync(ITelegramBotClient client, long chatId, DialogContext dialogContext, CancellationToken cancellationToken)
-    {
-        await client.SendMessage(chatId,
-            question,
-            parseMode: ParseMode.MarkdownV2,
-            replyMarkup: IsFirstStep 
-                ? null
-                : ReplyKeyboardBuilder.CreateBackButton(dialogContext.DialogName),
+        var loadDataResult = await DataLoader(dialogContext);
+        if (!loadDataResult.IsSuccess)
+            return Result.Failure(loadDataResult.ErrorMessage!);
+        var promptResult = FormatPrompt(promptTemplate, dialogContext, loadDataResult.Data);
+        if (!promptResult.IsSuccess)
+            return Result.Failure(promptResult.ErrorMessage!);
+        await client.SendMessage(chatId, 
+            promptResult.Data, 
+            replyMarkup: IsFirstStep
+            ? null
+            : ReplyKeyboardBuilder.CreateBackButton(dialogContext.DialogName),
+            parseMode: ParseMode.MarkdownV2, 
             cancellationToken: cancellationToken);
+        return Result.Success();
     }
 
-    public Task<Result> HandleAsync(ITelegramBotClient client, Update update, DialogContext dialogContext, CancellationToken cancellationToken)
+    public override Task<Result> HandleAsync(ITelegramBotClient client, Update update, DialogContext dialogContext, CancellationToken cancellationToken)
     {
         if (update.Message is not { Text: not null })
             return Task.FromResult(
@@ -44,9 +45,9 @@ public class TextStep<T>(
         {
             var message = update.Message;
             var valueToAdd = (T)Convert.ChangeType(message.Text, typeof(T));
-            if (_validate != null)
+            if (validate != null)
             {
-                var validationResult = _validate(valueToAdd);
+                var validationResult = validate(valueToAdd);
                 if (!validationResult.IsSuccess)
                     return Task.FromResult(Result.Failure(validationResult.ErrorMessage!, ErrorType.Validation));
             }
