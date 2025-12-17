@@ -22,10 +22,10 @@ public class TestDialog(ITelegramBotClient botClient, IMediator mediator): IDial
                 "Время: {{time}}", 
                 _ => 1, 
                 _ => -1,
-                ctx=>
+                async ctx=>
                 {
                     ctx.DialogStorage!["time"] = DateTime.Now.ToShortTimeString();
-                    return Task.FromResult(Result<IEnumerable<string>>.Success(["time"]));
+                    return Result<IEnumerable<string>>.Success(["time"]);
                 },
                 true)
         },
