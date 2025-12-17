@@ -1,4 +1,4 @@
-using FinBot.Domain.Models.SavingModel;
+using FinBot.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -28,14 +28,8 @@ public class SavingConfiguration : IEntityTypeConfiguration<Saving>
         builder.Property(s => s.CreatedAt)
             .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc)); // Для PostgreSQL важно явно указывать UTC
 
-        builder.HasOne(s => s.Owner)
-            .WithMany()
-            .HasForeignKey(s => s.OwnerId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasOne(s => s.Group)
-            .WithMany()
-            .HasForeignKey(s => s.GroupId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .WithOne(g => g.Saving)
+            .HasForeignKey<Saving>(s => s.GroupId);
     }
 }

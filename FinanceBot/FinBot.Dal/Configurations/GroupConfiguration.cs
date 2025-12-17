@@ -13,20 +13,24 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(g => g.Name)
             .HasMaxLength(255)
             .IsRequired();
-
-        builder.Property(g => g.AllocationStrategy)
-            .HasConversion<string>()
-            .HasMaxLength(50)
+        
+        builder.Property(g => g.SavingStrategy)
+            .HasConversion<int>()
             .IsRequired();
 
         builder.HasOne(g => g.Creator)
-            .WithMany()
+            .WithMany(g => g.Groups)
             .HasForeignKey(g => g.CreatorId)
-            .OnDelete(DeleteBehavior.Restrict); // Не удаляем пользователя, если удаляется группа
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(g => g.Accounts)
             .WithOne(a => a.Group)
             .HasForeignKey(a => a.GroupId)
-            .OnDelete(DeleteBehavior.Cascade); // Удаляем аккаунты при удалении группы
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(g => g.Saving)
+            .WithOne(s => s.Group)
+            .HasForeignKey<Saving>(s => s.GroupId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -20,5 +20,10 @@ public class User : IBusinessEntity<Guid>
     /// <summary>
     /// Отображаемое имя пользователя
     /// </summary>
-    public required string DisplayName { get; set; }
+    public string DisplayName { get; set; }
+
+    // Группы, в которых юз - создатель
+    public List<Group> Groups { get; set; } = [];
+    // Просто счета из всех групп, в которых состоти юз
+    public List<Account> Accounts { get; set; } = [];
 }

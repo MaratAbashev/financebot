@@ -1,5 +1,4 @@
-using FinBot.Domain.Models.AllocationModel;
-using FinBot.Domain.Models.SavingModel;
+using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
 
 namespace FinBot.Domain.Models;
@@ -8,7 +7,8 @@ public class Account : IBusinessEntity<int>
 {
     public int Id { get; set; }
     public Role Role { get; set; }
-    public required Allocation DailyAllocation { get; set; }
+    public decimal DailyAllocation { get; set; }
+    public decimal MonthlyAllocation { get; set; }
     public SavingStrategy SavingStrategy { get; set; }
     
     public decimal Balance { get; set; }
@@ -18,4 +18,6 @@ public class Account : IBusinessEntity<int>
 
     public Guid GroupId { get; set; }
     public Group? Group { get; set; }
+
+    public List<Expense> Expenses { get; set; } = [];
 }
