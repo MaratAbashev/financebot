@@ -14,6 +14,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Serilog;
 using Scalar.AspNetCore;
+using ServiceCollectionExtensions = FinBot.Integrations.ServiceCollectionExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -44,7 +45,7 @@ services.AddBll(configuration);
 services.AddHangfire(configuration);
 services.AddOpenApi();
 services.AddMinioS3(configuration);
-services.AddExcel();
+ServiceCollectionExtensions.AddMetrics(services);
 
 var app = builder.Build();
 

@@ -5,11 +5,12 @@ using FinBot.Bll.Interfaces.Integration;
 using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
 using FinBot.Domain.Utils;
+using FinBot.Integrations.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OfficeOpenXml;
 
-namespace FinBot.Integrations.Excel;
+namespace FinBot.Integrations.Services;
 
 public class ExcelTableService : IExcelTableService
 {
@@ -35,6 +36,7 @@ public class ExcelTableService : IExcelTableService
                 .ThenInclude(a => a!.User)
                 .Where(e => e.Account!.GroupId == groupId)
                 .OrderByDescending(e => e.Date)
+                .AsNoTracking()
                 .ToListAsync();
             
             return Result<byte[]>.Success(await ExportToExcelAsync(expenses));
@@ -55,6 +57,7 @@ public class ExcelTableService : IExcelTableService
                 .ThenInclude(a => a!.User)
                 .Where(e => e.Account!.GroupId == groupId && e.Account!.UserId == userId)
                 .OrderByDescending(e => e.Date)
+                .AsNoTracking()
                 .ToListAsync();
             
             return Result<byte[]>.Success(await ExportToExcelAsync(expenses));
@@ -72,7 +75,7 @@ public class ExcelTableService : IExcelTableService
     
         using var package = new ExcelPackage();
     
-        var today = DateTime.Today;
+        var today = DateTime.Today.ToUniversalTime();
         var culture = CultureInfo.GetCultureInfo("ru-RU");
     
         var expensesForMonth = expenseRecords

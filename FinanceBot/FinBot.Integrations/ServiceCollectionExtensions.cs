@@ -1,6 +1,7 @@
 using FinBot.Bll.Interfaces.Integration;
 using FinBot.Integrations.Excel;
 using FinBot.Integrations.MinioS3;
+using FinBot.Integrations.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,8 +28,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMinioStorage, MinioStorage>();
     }
 
-    public static void AddExcel(this IServiceCollection services)
+    public static void AddMetrics(this IServiceCollection services)
     {
         services.AddScoped<IExcelTableService, ExcelTableService>();
+        services.AddScoped<IChartService, ChartService>();
     }
 }

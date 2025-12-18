@@ -8,7 +8,6 @@ namespace FinBot.WebApi.GroupJob;
 
 public class GroupJobWorker(
     IGroupBackgroundService service,
-    IGenericRepository<Group, Guid, PDbContext> repository,
     ILogger<GroupJobWorker> logger)
 {
     public async Task ProcessMonthlyAsync(Guid groupId)

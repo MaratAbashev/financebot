@@ -13,7 +13,6 @@ public class GroupService(
     IGenericRepository<Group, Guid, PDbContext> groupRepository,
     IGenericRepository<Saving, Guid, PDbContext> savingRepository,
     IUnitOfWork<PDbContext> unitOfWork,
-    IUserService userService,
     ILogger<GroupService> logger) : IGroupService
 {
     public async Task<Result<Group>> CreateGroupAsync(
