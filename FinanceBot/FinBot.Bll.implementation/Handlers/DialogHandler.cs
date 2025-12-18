@@ -107,8 +107,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
 
         if (nextStepId == -1)
         {
-            await dialogDefinition.OnCompletedAsync(dialogContext.UserId, dialogContext, cancellationToken);
-            dialogRepository.Delete(dialogContext);
+            await dialogDefinition.OnCompletedAsync(dialogContext.UserId, dialogContext, update, cancellationToken);
             await dialogRepository.SaveChangesAsync();
         }
     }

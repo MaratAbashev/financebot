@@ -15,4 +15,7 @@ public interface IUserService
         Guid groupId,
         decimal amount,
         ExpenseCategory category);
+
+    Task<Result<User?>> GetUserByGuidIdAsync(Guid id);
+    Task<Result<User?>> GetUserByTgIdAsync(long id);
 }

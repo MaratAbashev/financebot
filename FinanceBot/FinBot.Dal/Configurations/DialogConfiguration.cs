@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using FinBot.Domain.Models;
+using FinBot.Domain.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -33,8 +34,8 @@ public class DialogConfiguration: IEntityTypeConfiguration<DialogContext>
             .HasColumnType("jsonb")
             .HasConversion(
                 ds => 
-                    JsonSerializer.Serialize(ds, new JsonSerializerOptions { WriteIndented = true }),
+                    JsonSerializer.Serialize(ds, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = null, Converters = { new ObjectToInferredTypesConverter() } }),
                 ds => 
-                    JsonSerializer.Deserialize<Dictionary<string, object>>(ds, new JsonSerializerOptions { WriteIndented = true }));
+                    JsonSerializer.Deserialize<Dictionary<string, object>>(ds, new JsonSerializerOptions { WriteIndented = true,  PropertyNamingPolicy = null, Converters = { new ObjectToInferredTypesConverter() } }));
     }
 }
