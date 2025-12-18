@@ -67,11 +67,20 @@ public class ChartService(IGenericRepository<Expense, int, PDbContext> repositor
         if (expenses.Count == 0) return Result<byte[]>.Success(Array.Empty<byte>());
 
         Plot plot = new();
+
+        var fontName = Fonts.Detect(title);
+        if (!string.IsNullOrEmpty(fontName))
+        {
+            plot.Axes.Title.Label.FontName = fontName;
+            plot.Axes.Bottom.TickLabelStyle.FontName = fontName;
+            plot.Axes.Left.TickLabelStyle.FontName = fontName;
+        }
+
         plot.Title(title);
 
         var categoryGroups = expenses
             .GroupBy(e => e.Category)
-            .OrderBy(g => g.Key) 
+            .OrderBy(g => g.Key)
             .ToList();
 
         var users = expenses
@@ -82,6 +91,8 @@ public class ChartService(IGenericRepository<Expense, int, PDbContext> repositor
         
         var palette = Colors.Category10;
         List<Bar> allBars = new();
+        List<(string Text, double X, double Y)> valueLabels = new();
+
         double groupWidth = 0.8;
         double barWidth = groupWidth / Math.Max(users.Count, 1);
 
@@ -114,29 +125,43 @@ public class ChartService(IGenericRepository<Expense, int, PDbContext> repositor
                         FillColor = palette[u % palette.Length],
                         Size = barWidth,
                         LineWidth = 1,
+                        Label = categoryGroup.Key + " " + userName
                     };
                     allBars.Add(bar);
+
+                    valueLabels.Add((userSum.ToString("N0"), centerPosition + offset, (double)userSum));
                 }
             }
         }
 
         var barPlot = plot.Add.Bars(allBars);
 
+        foreach (var label in valueLabels)
+        {
+            var text = plot.Add.Text(label.Text, label.X, label.Y);
+            text.LabelAlignment = Alignment.LowerCenter;
+            text.Color = Colors.Black;
+
+            if (!string.IsNullOrEmpty(fontName))
+            {
+                text.LabelFontName = fontName;
+            }
+        }
+
         for (int u = 0; u < users.Count; u++)
         {
-            var marker = plot.Add.Marker(0, 0); 
+            var marker = plot.Add.Marker(0, 0);
             marker.Color = palette[u % palette.Length];
             marker.LegendText = users[u];
             marker.Size = 0;
         }
-        
-        plot.ShowLegend();
 
+        plot.ShowLegend();
         plot.Axes.Bottom.TickGenerator = new NumericManual(tickPositions, tickLabels);
         plot.Axes.Bottom.TickLabelStyle.Rotation = 45;
         plot.Axes.Bottom.TickLabelStyle.Alignment = Alignment.MiddleLeft;
-        
-        plot.Axes.Margins(bottom: 0);
+
+        plot.Axes.Margins(bottom: 0, top: 0.15); 
 
         return Result<byte[]>.Success(plot.GetImageBytes(1200, 800, ImageFormat.Png));
     }
@@ -146,6 +171,15 @@ public class ChartService(IGenericRepository<Expense, int, PDbContext> repositor
         if (expenses.Count == 0) return Result<byte[]>.Success(Array.Empty<byte>());
 
         Plot plot = new();
+
+        var fontName = Fonts.Detect(title);
+        if (!string.IsNullOrEmpty(fontName))
+        {
+            plot.Axes.Title.Label.FontName = fontName;
+            plot.Axes.Bottom.TickLabelStyle.FontName = fontName;
+            plot.Axes.Left.TickLabelStyle.FontName = fontName;
+        }
+
         plot.Title(title);
         plot.Axes.DateTimeTicksBottom();
 
@@ -155,7 +189,6 @@ public class ChartService(IGenericRepository<Expense, int, PDbContext> repositor
         for (int i = 0; i < users.Count; i++)
         {
             var userName = users[i];
-            
             var userExpenses = expenses
                 .Where(e => (e.Account!.User!.DisplayName) == userName)
                 .GroupBy(e => e.Date.Date)
@@ -163,7 +196,7 @@ public class ChartService(IGenericRepository<Expense, int, PDbContext> repositor
 
             List<DateTime> dates = new();
             List<double> values = new();
-            
+
             var minDate = expenses.Min(e => e.Date).Date;
             var maxDate = expenses.Max(e => e.Date).Date;
 
