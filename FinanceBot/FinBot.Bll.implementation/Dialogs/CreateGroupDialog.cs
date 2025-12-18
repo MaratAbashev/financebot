@@ -167,10 +167,20 @@ public class CreateGroupDialog(
             || !TryGetData<int>(dialogContext, "daySavingStrategy", out var daySavingStrategy)
             || !TryGetData<int>(dialogContext, "periodSavingStrategy", out var periodSavingStrategy))
             return;
-        var targetName = dialogContext.DialogStorage?["targetName"].ToString();
-        decimal? targetAmount = Convert.ToDecimal(dialogContext.DialogStorage?["targetAmount"]);
-        if (targetAmount == 0)
+        
+        dialogContext.DialogStorage!.TryGetValue("targetName", out var targetNameBoxed);
+        var targetName = targetNameBoxed?.ToString();
+        decimal? targetAmount = null;
+        try
+        {
+            if (dialogContext.DialogStorage!.TryGetValue("targetAmount", out var targetAmountBoxed))
+                targetAmount = Convert.ToDecimal(targetAmountBoxed);
+        }
+        catch (Exception)
+        {
             targetAmount = null;
+        }
+
         var createGroupResult = await groupService.CreateGroupAsync(
             groupName,
             getUserResult.Data,

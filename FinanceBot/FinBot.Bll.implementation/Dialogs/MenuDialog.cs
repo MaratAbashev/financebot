@@ -22,7 +22,7 @@ public class MenuDialog(IMediator mediator): IDialogDefinition
                 _ => -1,
                 _ => [
                     ("Создать копилку", "CreateGroupDialog"),
-                    ("Внести пополнение", "AddExpenseDialog"),
+                    ("Внести трату", "AddExpenseDialog"),
                     ("Добавить пользователя", "AddUserDialog"),
                     ("Управление копилками", "ManageGroupsDialog")
                 ],
