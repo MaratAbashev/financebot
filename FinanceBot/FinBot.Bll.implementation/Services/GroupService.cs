@@ -88,7 +88,7 @@ public class GroupService(
     {
         try
         {
-            unitOfWork.CommonContext.Attach(group);
+            // unitOfWork.CommonContext.Attach(group);
             var accounts = group.Accounts.OrderBy(a => a.Id).ToList();
             var now = DateTime.Now;
             var daysInMonthLeft = DateTime.DaysInMonth(now.Year, now.Month) - (now.Day - 1);

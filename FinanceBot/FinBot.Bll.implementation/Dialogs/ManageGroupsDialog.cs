@@ -3,8 +3,10 @@ using FinBot.Bll.Implementation.Dialogs.Steps;
 using FinBot.Bll.Implementation.Requests;
 using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Dialogs;
+using FinBot.Bll.Interfaces.Integration;
 using FinBot.Bll.Interfaces.Services;
 using FinBot.Dal.DbContexts;
+using FinBot.Domain.Events;
 using FinBot.Domain.Models;
 using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
@@ -19,10 +21,11 @@ using User = FinBot.Domain.Models.User;
 namespace FinBot.Bll.Implementation.Dialogs;
 
 public class ManageGroupsDialog(
-    IUserService userService,
     IGroupService groupService,
     IGenericRepository<User, Guid, PDbContext> userRepository,
     IGenericRepository<Group, Guid, PDbContext> groupRepository,
+    IIntegrationsService integrationsService,
+    IReportProducer reportProducer,
     ITelegramBotClient botClient,
     IMediator mediator,
     ILogger<ManageGroupsDialog> logger) : IDialogDefinition
@@ -67,7 +70,7 @@ public class ManageGroupsDialog(
             1,
             new ChoiceStep<int>(
                 "chooseAction",
-                "Что будем делать",
+                "Что будем делать?\n{{groupBalance}}\n{{accountBalance}}\n{{savingBalance}}",
                 ctx => (int)ctx.DialogStorage!["chooseAction"],
                 _ => 0,
                 ctx =>
@@ -81,6 +84,7 @@ public class ManageGroupsDialog(
                             ("Добавить пользователя", 41),
                             ("Удалить пользователя", 51),
                             ("Изменить группу", 61),
+                            ("Получить статистику", 71)
                         ];
 
                     if (savingFlag && !savingActiveFlag)
@@ -99,13 +103,27 @@ public class ManageGroupsDialog(
                     var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
                     var group = await groupRepository.GetAll()
                         .Include(g => g.Saving)
+                        .Include(g => g.Accounts)
+                        .ThenInclude(a => a.User)
                         .AsNoTracking()
                         .FirstAsync(g => g.Id == groupId);
+                    var saving = group.Saving;
+                    var account = group.Accounts.SingleOrDefault(a => a.User!.TelegramId == ctx.UserId);
                     
                     ctx.DialogStorage!["savingFlag"] = group.SavingStrategy == SavingStrategy.Save;
                     ctx.DialogStorage!["savingActiveFlag"] = group.Saving!.IsActive;
                     
-                    return Result<IEnumerable<string>>.Success([]);
+                    var groupBalance = $"Баланс группы: {Math.Round(group.GroupBalance)} из {Math.Round(group.MonthlyReplenishment)}";
+                    var accountBalance = $"Ваш баланс: {Math.Round(account!.Balance)} из {Math.Round(account.DailyAllocation)}";
+                    var savingBalance = group.SavingStrategy == SavingStrategy.Save
+                        ? $"В копилке {Math.Round(saving.CurrentAmount)} из {Math.Round(saving.TargetAmount)}"
+                        : String.Empty;
+                    
+                    ctx.DialogStorage!["accountBalance"] = accountBalance;
+                    ctx.DialogStorage!["groupBalance"] = groupBalance;
+                    ctx.DialogStorage!["savingBalance"] = savingBalance;
+                    
+                    return Result<IEnumerable<string>>.Success(["groupBalance", "accountBalance", "savingBalance"]);
                 }
             )
             
@@ -153,7 +171,7 @@ public class ManageGroupsDialog(
                     for (var i = 0; i < accountCount; i++)
                     {
                         var account = userAccounts[i];
-                        usersString.AppendLine($@"{i + 1}\. {account.User!.DisplayName}");
+                        usersString.AppendLine($"{i + 1} {account.User!.DisplayName}");
                     }
                     
                     ctx.DialogStorage!["accountCount"] = accountCount;
@@ -246,7 +264,7 @@ public class ManageGroupsDialog(
                     for (var i = 0; i < accountCount; i++)
                     {
                         var account = userAccounts[i];
-                        usersString.AppendLine($@"{i}\. {account.User!.DisplayName}");
+                        usersString.AppendLine($"{i} {account.User!.DisplayName}");
                     }
                     
                     ctx.DialogStorage!["accountCount"] = accountCount;
@@ -341,7 +359,7 @@ public class ManageGroupsDialog(
                     for (var i = 0; i < accountCount; i++)
                     {
                         var account = userAccounts[i];
-                        usersString.AppendLine($@"{i}\. {account.User!.DisplayName}");
+                        usersString.AppendLine($"{i} {account.User!.DisplayName}");
                     }
                     
                     ctx.DialogStorage!["removeUserMonthlyForRecalculate"] = group.MonthlyReplenishment;
@@ -444,19 +462,84 @@ public class ManageGroupsDialog(
             new ChoiceStep<int>(
                 "ChooseReportType",
                 "Какой отчёт вы желаете получить?",
-                _ => -1,
+                _ => 73,
                 _ => 71,
                 _ =>
                 {
                     var buttons = new List<(string, int)>()
                     {
                         ("Таблица", (int)ReportType.ExcelTable),
-                        ("Гистаграмма", (int)ReportType.CategoryChart),
+                        ("Гистограмма", (int)ReportType.CategoryChart),
                         ("Линейный график", (int)ReportType.LineChart)
                     };
                     
                     return buttons;
-                })
+                }
+            )
+            
+        },
+        {
+         73,
+         new ChoiceStep<string>(
+             "Temp",
+             "Отчёт загружается",
+             _ => -1,
+             _ => 72,
+             _ =>
+             {
+                 return new List<(string, string)>()
+                 {
+                     ("Получить", "done")
+                 };
+             },
+             async ctx =>
+             {
+                 var isGroupStatistic = (bool)ctx.DialogStorage!["GetGroupStatistic"];
+                 var chooseReportType = (ReportType)(int)ctx.DialogStorage!["ChooseReportType"];
+                 var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
+                 var userId = (await userRepository.FirstOrDefaultAsync(u => u.TelegramId == ctx.UserId))!.Id;
+                 ReportGenerationEvent evt;
+
+                 switch (chooseReportType)
+                 {
+                     case ReportType.ExcelTable:
+                         evt = new ReportGenerationEvent 
+                         { 
+                             GroupId = groupId, 
+                             UserId = userId, 
+                             Type = ReportType.ExcelTable 
+                         };
+    
+                         var result = await reportProducer.QueueReportGenerationAsync(evt);
+                         break;
+                     
+                     case ReportType.CategoryChart:
+                         evt = new ReportGenerationEvent 
+                         { 
+                             GroupId = groupId, 
+                             UserId = isGroupStatistic ? null : userId, 
+                             Type = ReportType.CategoryChart 
+                         };
+                         await reportProducer.QueueReportGenerationAsync(evt);
+                         break;
+                     
+                     case ReportType.LineChart:
+                         evt = new ReportGenerationEvent 
+                         { 
+                             GroupId = groupId, 
+                             UserId = isGroupStatistic ? null : userId, 
+                             Type = ReportType.LineChart 
+                         };
+        
+                         await reportProducer.QueueReportGenerationAsync(evt);
+                         break;
+                     
+                     default:
+                         throw new ArgumentOutOfRangeException();
+                 }
+
+                 return Result<IEnumerable<string>>.Success([]);
+             })
         }
     };
 
@@ -470,6 +553,7 @@ public class ManageGroupsDialog(
                 .ThenInclude(a => a.User)
             .Include(g => g.Saving)
             .FirstOrDefaultAsync(g => g.Id == groupId);
+        var user = await userRepository.FirstOrDefaultAsync(u => u.TelegramId == dialogContext.UserId);
         
         if (group == null)
         {
@@ -592,10 +676,6 @@ public class ManageGroupsDialog(
                 break;
             
             case 61:
-                logger.LogCritical("61");
-                break;
-            
-            case 71:
                 try
                 {
                     var newGroupName = (string)dialogContext.DialogStorage!["newGroupName"];
@@ -628,7 +708,58 @@ public class ManageGroupsDialog(
                         cancellationToken: cancellationToken);
                     break;
                 }
+                
+            case 71:
+                var isGroupStatistic = (bool)dialogContext.DialogStorage!["GetGroupStatistic"];
+                var chooseReportType = (ReportType)(long)dialogContext.DialogStorage!["ChooseReportType"];
+                Result<byte[]> reportResult;
 
+                switch (chooseReportType)
+                {
+                    case ReportType.ExcelTable:
+                        reportResult = isGroupStatistic 
+                            ? await integrationsService.GetExcelTableForGroup(groupId) 
+                            : await integrationsService.GetExcelTableForUserInGroup(groupId, user!.Id);
+                        break;
+                    case ReportType.CategoryChart:
+                        reportResult = isGroupStatistic 
+                            ? await integrationsService.GetDiagramForGroup(groupId) 
+                            : await integrationsService.GetDiagramForUserInGroup(groupId, user!.Id);
+                        break;
+                    case ReportType.LineChart:
+                        reportResult = isGroupStatistic 
+                            ? await integrationsService.GetLineChartForGroup(groupId) 
+                            : await integrationsService.GetLineChartForUserInGroup(groupId, user!.Id);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                if (!reportResult.IsSuccess)
+                {
+                    logger.LogError("Error while getting report: {error}", reportResult.ErrorMessage);
+                    await botClient.SendMessage(
+                        chatId,
+                        "Произошла ошибка",
+                        parseMode: ParseMode.MarkdownV2, 
+                        cancellationToken: cancellationToken);
+                    
+                    break;
+                }
+                
+                byte[] report = reportResult.Data;
+
+                using (var stream = new MemoryStream(report))
+                {
+                    var filename = chooseReportType == ReportType.ExcelTable ? "report.xlsx" : "report.png";
+                    await botClient.SendDocument(
+                        chatId: chatId,
+                        document: new InputFileStream(stream, fileName: filename),
+                        cancellationToken: cancellationToken
+                    );
+                }
+                break;
+            
             default:
                 logger.LogCritical("-1111");
                 break;

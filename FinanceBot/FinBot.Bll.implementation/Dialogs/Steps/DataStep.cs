@@ -1,4 +1,5 @@
-﻿using FinBot.Bll.Interfaces.Dialogs;
+﻿using System.Text.RegularExpressions;
+using FinBot.Bll.Interfaces.Dialogs;
 using FinBot.Domain.Models;
 using FinBot.Domain.Utils;
 using Telegram.Bot;
@@ -35,6 +36,8 @@ public abstract class DataStep(
                 return Result<string>.Failure($"Cant get value for {key} to replace key");
             prompt =  prompt.Replace($"{{{{{key}}}}}", value.ToString());
         }
+
+        prompt = Regex.Replace(prompt, @"[^a-zA-Zа-яА-Я0-9\s]", "");
         return Result<string>.Success(prompt);
     }
     
