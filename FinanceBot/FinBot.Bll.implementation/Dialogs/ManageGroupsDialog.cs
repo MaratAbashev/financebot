@@ -322,7 +322,7 @@ public class ManageGroupsDialog(
             52,
             new TextStep<string>(
                 "removeUserRecalculateAllocations",
-                @"Перераспределите {{removeUserMonthlyForRecalculate}} на {{removeUserUsersString}}\nвведите числа через пробел",
+                "Перераспределите {{removeUserMonthlyForRecalculate}} на {{removeUserUsersString}} введите числа через пробел",
                 _ => -1,
                 _ => 51,
                 async ctx =>
@@ -347,7 +347,7 @@ public class ManageGroupsDialog(
                     ctx.DialogStorage!["removeUserMonthlyForRecalculate"] = group.MonthlyReplenishment;
                     ctx.DialogStorage!["removeUserUsersString"] = usersString.ToString();
 
-                    return Result<IEnumerable<string>>.Success(["monthlyForRecalculate", "usersString"]);
+                    return Result<IEnumerable<string>>.Success(["monthlyForRecalculate", "usersString", "removeUserMonthlyForRecalculate", "removeUserUsersString"]);
                 },
                 isFirstStep: false,
                 validate:
@@ -526,8 +526,8 @@ public class ManageGroupsDialog(
             
             case 41:
                 var newUserId = Guid.Parse((string)dialogContext.DialogStorage!["addUserId"]);
-                var newUserRole = (Role)(int)dialogContext.DialogStorage!["addUserRole"];
-                var addUserAllocation = (decimal)dialogContext.DialogStorage!["addUserAllocation"];
+                var newUserRole = (Role)(long)dialogContext.DialogStorage!["addUserRole"];
+                var addUserAllocation = decimal.Parse((string)dialogContext.DialogStorage!["addUserAllocation"]);
                 var addUserOldAllocations = ((string)dialogContext.DialogStorage!["addUserRecalculateAllocations"]).Split(' ').Select(x => decimal.Parse(x)).ToArray();
                 var addUserStrategy = (SavingStrategy)(int)dialogContext.DialogStorage!["addUserStrategy"];
                 
@@ -596,9 +596,39 @@ public class ManageGroupsDialog(
                 break;
             
             case 71:
-                logger.LogCritical("71");
-                break;
-            
+                try
+                {
+                    var newGroupName = (string)dialogContext.DialogStorage!["newGroupName"];
+                    var newReplenishment = decimal.Parse((string)dialogContext.DialogStorage!["newReplenishment"]);
+                    var newDebtStrategy = (DebtStrategy)(long)dialogContext.DialogStorage!["newDebtStrategy"];
+                    var newSavingStrategy = (SavingStrategy)(long)dialogContext.DialogStorage!["newSavingStrategy"];
+
+                    group.Name = newGroupName;
+                    group.MonthlyReplenishment = newReplenishment;
+                    group.SavingStrategy = newSavingStrategy;
+                    group.DebtStrategy = newDebtStrategy;
+
+                    groupRepository.Update(group);
+                    await groupRepository.SaveChangesAsync();
+                    
+                    await botClient.SendMessage(
+                        chatId,
+                        "Группа успешно изменена",
+                        parseMode: ParseMode.MarkdownV2, 
+                        cancellationToken: cancellationToken);
+                    await mediator.Send(new StartDialogRequest(update, "MenuDialog", chatId), cancellationToken);
+                    break;
+                }
+                catch (Exception)
+                {
+                    await botClient.SendMessage(
+                        chatId,
+                        "Произошла ошибка",
+                        parseMode: ParseMode.MarkdownV2, 
+                        cancellationToken: cancellationToken);
+                    break;
+                }
+
             default:
                 logger.LogCritical("-1111");
                 break;
