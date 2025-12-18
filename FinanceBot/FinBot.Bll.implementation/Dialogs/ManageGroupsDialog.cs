@@ -482,7 +482,7 @@ public class ManageGroupsDialog(
          73,
          new ChoiceStep<string>(
              "Temp",
-             "Отчёт загружается",
+             "Отчет загружается",
              _ => -1,
              _ => 72,
              _ =>
@@ -506,7 +506,7 @@ public class ManageGroupsDialog(
                          evt = new ReportGenerationEvent 
                          { 
                              GroupId = groupId, 
-                             UserId = userId, 
+                             UserId = isGroupStatistic ? null : userId, 
                              Type = ReportType.ExcelTable 
                          };
     
@@ -719,21 +719,22 @@ public class ManageGroupsDialog(
                     case ReportType.ExcelTable:
                         reportResult = isGroupStatistic 
                             ? await integrationsService.GetExcelTableForGroup(groupId) 
-                            : await integrationsService.GetExcelTableForUserInGroup(groupId, user!.Id);
+                            : await integrationsService.GetExcelTableForUserInGroup(user!.Id, groupId);
                         break;
                     case ReportType.CategoryChart:
                         reportResult = isGroupStatistic 
                             ? await integrationsService.GetDiagramForGroup(groupId) 
-                            : await integrationsService.GetDiagramForUserInGroup(groupId, user!.Id);
+                            : await integrationsService.GetDiagramForUserInGroup(user!.Id, groupId);
                         break;
                     case ReportType.LineChart:
                         reportResult = isGroupStatistic 
                             ? await integrationsService.GetLineChartForGroup(groupId) 
-                            : await integrationsService.GetLineChartForUserInGroup(groupId, user!.Id);
+                            : await integrationsService.GetLineChartForUserInGroup(user!.Id, groupId);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
+
 
                 if (!reportResult.IsSuccess)
                 {
