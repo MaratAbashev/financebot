@@ -2,7 +2,9 @@ using System.Text.Json.Serialization;
 using FinBot.Bll.Implementation.Requests;
 using FinBot.Dal;
 using FinBot.Dal.DbContexts;
+using FinBot.Integrations;
 using FinBot.WebApi;
+using FinBot.WebApi.BackgroundServices;
 using FinBot.WebApi.Extensions;
 using FinBot.WebApi.GroupJob;
 using FinBot.WebApi.TestEndpoints;
@@ -42,6 +44,10 @@ services.AddTelegram(configuration);
 services.AddBll(configuration);
 services.AddHangfire(configuration);
 services.AddOpenApi();
+services.AddMinioS3(configuration);
+services.AddKafkaIntegration();
+services.AddHostedService<ReportConsumerService>();
+services.AddGroupMetrics();
 
 var app = builder.Build();
 
@@ -63,6 +69,7 @@ if (app.Environment.IsDevelopment())
     app.MapUserEndpoints();
     app.MapGroupEndpoints();
     app.MapBackgroundEndpoints();
+    app.MapIntegrationEndpoints();
 }
 
 AddDailyJob(app);

@@ -1,4 +1,5 @@
 using FinBot.Bll.Implementation.Services;
+using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Services;
 using FinBot.Dal.DbContexts;
 using FinBot.WebApi.GroupJob;
@@ -14,6 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IGroupService, GroupService>();
         services.AddScoped<IGroupBackgroundService, GroupBackgroundService>();
+        services.AddScoped<IIntegrationsService, IntegrationService>();
         
         return services;
     }

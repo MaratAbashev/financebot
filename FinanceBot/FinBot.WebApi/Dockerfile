@@ -14,6 +14,7 @@ COPY . .
 WORKDIR "/src/FinBot.WebApi"
 RUN dotnet build "./FinBot.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
+
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./FinBot.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
@@ -21,4 +22,9 @@ RUN dotnet publish "./FinBot.WebApi.csproj" -c $BUILD_CONFIGURATION -o /app/publ
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN apt-get update && apt-get install -y \
+    libfontconfig1 \
+    fontconfig \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 ENTRYPOINT ["dotnet", "FinBot.WebApi.dll"]
