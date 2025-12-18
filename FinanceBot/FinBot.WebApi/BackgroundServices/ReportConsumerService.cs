@@ -2,6 +2,7 @@ using System.Text.Json;
 using Confluent.Kafka;
 using FinBot.Bll.Interfaces;
 using FinBot.Domain.Events;
+using FinBot.Domain.Models.Enums;
 
 namespace FinBot.WebApi.BackgroundServices;
 

@@ -183,7 +183,7 @@ public class ManageGroupsDialog(
         },
         {
             42,
-            new ChoiceStep<int>( // todo: тут ошибка какая-то, хз почему именно тут
+            new ChoiceStep<int>(
                 "addUserRole",
                 "Какая роль нового юзера?",
                 _ => 43,
@@ -200,7 +200,7 @@ public class ManageGroupsDialog(
         },
         {
             43,
-            new TextStep<string>( // todo: тут ошибка какая-то, хз почему именно тут
+            new TextStep<string>(
                 "addUserAllocation",
                 "Выделите новому пользователю сумму из {{addUserMonthlyForRecalculate}}",
                 _ => 44,
@@ -213,7 +213,7 @@ public class ManageGroupsDialog(
                         .AsNoTracking()
                         .FirstAsync(g => g.Id == groupId);
 
-                    ctx.DialogStorage!["addUserMonthlyForRecalculate\""] = group.MonthlyReplenishment;
+                    ctx.DialogStorage!["addUserMonthlyForRecalculate"] = group.MonthlyReplenishment;
                     
                     return await Task.FromResult(Result<IEnumerable<string>>.Success(["addUserMonthlyForRecalculate"]));
                 },
@@ -227,7 +227,7 @@ public class ManageGroupsDialog(
             44,
             new TextStep<string>(
                 "addUserRecalculateAllocations",
-                @"Распределите {{leftAfterNewUser}} на {{oldUsersString}}\nвведите числа через пробел",
+                "Распределите {{leftAfterNewUser}} на {{oldUsersString}} \nвведите числа через пробел",
                 _ => 45,
                 _ => 43,
                 async ctx =>
@@ -253,7 +253,7 @@ public class ManageGroupsDialog(
                     ctx.DialogStorage!["leftAfterNewUser"] = group.MonthlyReplenishment - decimal.Parse((string)ctx.DialogStorage!["addUserAllocation"]);
                     ctx.DialogStorage!["oldUsersString"] = usersString.ToString();
 
-                    return Result<IEnumerable<string>>.Success(["leftAfterNewUser", "accountCount"]);
+                    return Result<IEnumerable<string>>.Success(["leftAfterNewUser", "accountCount", "oldUsersString"]);
                 },
                 isFirstStep: false,
                 validate:
@@ -289,7 +289,7 @@ public class ManageGroupsDialog(
         },
         {
             51,
-            new ChoiceStep<string>(
+            new ChoiceStep<long>(
                 "chooseRemoveUser",
                 "Выберите пользователя на удаление",
                 _ => 52,
@@ -298,7 +298,7 @@ public class ManageGroupsDialog(
                 {
                     var buttons = ctx.DialogStorage!["usersButtons"];
 
-                    return (IEnumerable<(string ButtonName, string ButtonValue)>)buttons;
+                    return (IEnumerable<(string ButtonName, long ButtonValue)>)buttons;
                 },
                 async ctx =>
                 {
@@ -310,7 +310,7 @@ public class ManageGroupsDialog(
                         .FirstAsync(g => g.Id == groupId);
 
                     var buttons = group.Accounts.Where(a => a.Role != Role.Admin)
-                        .Select(a => (a.User!.DisplayName, a.UserId.ToString())).ToList();
+                        .Select(a => (a.User!.DisplayName, a.User.TelegramId)).ToList();
                     
                     ctx.DialogStorage!["usersButtons"] = buttons;
 
@@ -420,6 +420,43 @@ public class ManageGroupsDialog(
                         buttons.Add(("Кладем в копилку", (int)SavingStrategy.Save));
                     return buttons;
                 })
+        },
+        {
+            71,
+            new ChoiceStep<bool>(
+                "GetGroupStatistic",
+                "Чью статистику смотрим?",
+                _ => 72,
+                _ => 1,
+                _ =>
+                {
+                    List<(string, bool)> buttons =
+                    [
+                        ("Мою", false),
+                        ("Группы", true)
+                    ];
+                    return buttons;
+                })
+        }
+        ,
+        {
+            72,
+            new ChoiceStep<int>(
+                "ChooseReportType",
+                "Какой отчёт вы желаете получить?",
+                _ => -1,
+                _ => 71,
+                _ =>
+                {
+                    var buttons = new List<(string, int)>()
+                    {
+                        ("Таблица", (int)ReportType.ExcelTable),
+                        ("Гистаграмма", (int)ReportType.CategoryChart),
+                        ("Линейный график", (int)ReportType.LineChart)
+                    };
+                    
+                    return buttons;
+                })
         }
     };
 
@@ -489,7 +526,7 @@ public class ManageGroupsDialog(
             
             case 41:
                 var newUserId = Guid.Parse((string)dialogContext.DialogStorage!["addUserId"]);
-                var newUserRole = Role.Admin; // (Role)(int)dialogContext.DialogStorage!["addUserRole"];
+                var newUserRole = (Role)(int)dialogContext.DialogStorage!["addUserRole"];
                 var addUserAllocation = (decimal)dialogContext.DialogStorage!["addUserAllocation"];
                 var addUserOldAllocations = ((string)dialogContext.DialogStorage!["addUserRecalculateAllocations"]).Split(' ').Select(x => decimal.Parse(x)).ToArray();
                 var addUserStrategy = (SavingStrategy)(int)dialogContext.DialogStorage!["addUserStrategy"];
@@ -525,11 +562,43 @@ public class ManageGroupsDialog(
                 break;
 
             case 51:
-                logger.LogCritical("51");
+                var userToDeleteId = (long)dialogContext.DialogStorage!["chooseRemoveUser"];
+                var removeUserRecalculateAllocations = ((string)dialogContext.DialogStorage!["removeUserRecalculateAllocations"]).Split(' ').Select(x => decimal.Parse(x)).ToArray();
+                if (group.Accounts.Count != removeUserRecalculateAllocations.Length + 1)
+                {
+                    await botClient.SendMessage(
+                        chatId,
+                        "Введено недостаточно значений для оставшихся пользователей",
+                        parseMode: ParseMode.MarkdownV2, 
+                        cancellationToken: cancellationToken);
+                    return;
+                }
+                
+                var removeUserResult = await groupService.RemoveUserFromGroupAsync(group, userToDeleteId, removeUserRecalculateAllocations);
+                if (!removeUserResult.IsSuccess)
+                {
+                    await botClient.SendMessage(
+                        chatId,
+                        "Произошла ошибка",
+                        parseMode: ParseMode.MarkdownV2, 
+                        cancellationToken: cancellationToken);
+                }
+                await botClient.SendMessage(
+                    chatId,
+                    "Пользователь успешно удалён",
+                    parseMode: ParseMode.MarkdownV2, 
+                    cancellationToken: cancellationToken);
+                await mediator.Send(new StartDialogRequest(update, "MenuDialog", chatId), cancellationToken);
                 break;
+            
             case 61:
                 logger.LogCritical("61");
                 break;
+            
+            case 71:
+                logger.LogCritical("71");
+                break;
+            
             default:
                 logger.LogCritical("-1111");
                 break;

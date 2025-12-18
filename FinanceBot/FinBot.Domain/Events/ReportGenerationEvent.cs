@@ -1,11 +1,6 @@
-namespace FinBot.Domain.Events;
+using FinBot.Domain.Models.Enums;
 
-public enum ReportType
-{
-    ExcelTable,
-    CategoryChart,
-    LineChart
-}
+namespace FinBot.Domain.Events;
 
 public class ReportGenerationEvent
 {

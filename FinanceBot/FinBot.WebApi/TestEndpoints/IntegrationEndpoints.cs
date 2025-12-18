@@ -1,6 +1,7 @@
 using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Integration;
 using FinBot.Domain.Events;
+using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
 using Microsoft.AspNetCore.Mvc;
 
