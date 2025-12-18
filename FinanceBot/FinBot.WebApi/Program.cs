@@ -4,6 +4,7 @@ using FinBot.Dal;
 using FinBot.Dal.DbContexts;
 using FinBot.Integrations;
 using FinBot.WebApi;
+using FinBot.WebApi.BackgroundServices;
 using FinBot.WebApi.Extensions;
 using FinBot.WebApi.GroupJob;
 using FinBot.WebApi.TestEndpoints;
@@ -14,7 +15,6 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Serilog;
 using Scalar.AspNetCore;
-using ServiceCollectionExtensions = FinBot.Integrations.ServiceCollectionExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -45,7 +45,9 @@ services.AddBll(configuration);
 services.AddHangfire(configuration);
 services.AddOpenApi();
 services.AddMinioS3(configuration);
-ServiceCollectionExtensions.AddMetrics(services);
+services.AddKafkaIntegration();
+services.AddHostedService<ReportConsumerService>();
+services.AddGroupMetrics();
 
 var app = builder.Build();
 

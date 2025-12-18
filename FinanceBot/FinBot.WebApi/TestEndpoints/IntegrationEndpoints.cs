@@ -1,5 +1,6 @@
 using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Integration;
+using FinBot.Domain.Events;
 using FinBot.Domain.Utils;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,14 +43,21 @@ public static class IntegrationEndpoints
             : Results.Problem(result.ErrorMessage);
     }
     
-    private static async Task<IResult> GenerateTable(IIntegrationsService integrationsService, [FromQuery] Guid groupId, [FromQuery] Guid? userId)
+    private static async Task<IResult> GenerateTable(
+        IReportProducer producer,
+        [FromQuery] Guid groupId, [FromQuery] Guid? userId)
     {
-        var result = userId is null
-            ? await integrationsService.GenerateExcelTableForGroup(groupId)
-            : await integrationsService.GenerateExcelTableForUserInGroup(userId.Value, groupId);
-        
+        var evt = new ReportGenerationEvent 
+        { 
+            GroupId = groupId, 
+            UserId = userId, 
+            Type = ReportType.ExcelTable 
+        };
+    
+        var result = await producer.QueueReportGenerationAsync(evt);
+
         return result.IsSuccess
-            ? Results.Ok()
+            ? Results.Accepted(value: "Request queued")
             : Results.Problem(result.ErrorMessage);
     }
     
@@ -69,14 +77,21 @@ public static class IntegrationEndpoints
             : Results.Problem(result.ErrorMessage);
     }
     
-    private static async Task<IResult> GenerateDiagram(IIntegrationsService integrationsService, [FromQuery] Guid groupId, [FromQuery] Guid? userId)
+    private static async Task<IResult> GenerateDiagram(
+        IReportProducer producer,
+        [FromQuery] Guid groupId, [FromQuery] Guid? userId)
     {
-        var result = userId is null
-            ? await integrationsService.GenerateDiagramForGroup(groupId)
-            : await integrationsService.GenerateDiagramForUserInGroup(userId.Value, groupId);
+        var evt = new ReportGenerationEvent 
+        { 
+            GroupId = groupId, 
+            UserId = userId, 
+            Type = ReportType.CategoryChart 
+        };
         
+        var result = await producer.QueueReportGenerationAsync(evt);
+
         return result.IsSuccess
-            ? Results.Ok()
+            ? Results.Accepted(value: "Request queued")
             : Results.Problem(result.ErrorMessage);
     }
     
@@ -96,14 +111,21 @@ public static class IntegrationEndpoints
             : Results.Problem(result.ErrorMessage);
     }
     
-    private static async Task<IResult> GenerateLineChart(IIntegrationsService integrationsService, [FromQuery] Guid groupId, [FromQuery] Guid? userId)
+    private static async Task<IResult> GenerateLineChart(
+        IReportProducer producer,
+        [FromQuery] Guid groupId, [FromQuery] Guid? userId)
     {
-        var result = userId is null
-            ? await integrationsService.GenerateLineChartForGroup(groupId)
-            : await integrationsService.GenerateLineChartForUserInGroup(userId.Value, groupId);
+        var evt = new ReportGenerationEvent 
+        { 
+            GroupId = groupId, 
+            UserId = userId, 
+            Type = ReportType.LineChart 
+        };
         
+        var result = await producer.QueueReportGenerationAsync(evt);
+
         return result.IsSuccess
-            ? Results.Ok()
+            ? Results.Accepted(value: "Request queued")
             : Results.Problem(result.ErrorMessage);
     }
 }

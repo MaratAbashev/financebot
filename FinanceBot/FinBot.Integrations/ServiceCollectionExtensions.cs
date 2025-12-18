@@ -1,5 +1,6 @@
 using FinBot.Bll.Interfaces.Integration;
 using FinBot.Integrations.Excel;
+using FinBot.Integrations.Kafka;
 using FinBot.Integrations.MinioS3;
 using FinBot.Integrations.Services;
 using Microsoft.Extensions.Configuration;
@@ -28,9 +29,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMinioStorage, MinioStorage>();
     }
 
-    public static void AddMetrics(this IServiceCollection services)
+    public static void AddGroupMetrics(this IServiceCollection services)
     {
         services.AddScoped<IExcelTableService, ExcelTableService>();
         services.AddScoped<IChartService, ChartService>();
+    }
+    
+    public static void AddKafkaIntegration(this IServiceCollection services)
+    {
+        services.AddSingleton<IReportProducer, KafkaProducer>();
     }
 }
