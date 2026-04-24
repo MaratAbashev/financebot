@@ -12,6 +12,13 @@ public interface IStep
     public Func<DialogContext, int> NextStepId { get; init; }
     public Func<DialogContext, int> PrevStepId { get; init; }
     public Func<Result, long, Update, DialogContext, Task>? OnPromptFailed { get; init; }
-    public Task<Result> PromptAsync(ITelegramBotClient client, long chatId, DialogContext dialogContext, CancellationToken cancellationToken);
-    public Task<Result> HandleAsync(ITelegramBotClient client, Update update, DialogContext dialogContext, CancellationToken cancellationToken);
+    public Task<Result> PromptAsync(
+        ITelegramBotClient client, 
+        long chatId, DialogContext dialogContext, 
+        CancellationToken cancellationToken);
+    public Task<Result> HandleAsync(
+        ITelegramBotClient client, 
+        Update update, 
+        DialogContext dialogContext, 
+        CancellationToken cancellationToken);
 }

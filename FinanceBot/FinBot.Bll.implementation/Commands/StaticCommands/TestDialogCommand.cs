@@ -12,6 +12,9 @@ public class TestDialogCommand(IMediator mediator): IStaticCommand
 {
     public async Task Handle(Update update)
     {
-        await mediator.Send(new StartDialogRequest(update,"TestDialog", update.Message!.From!.Id));
+        await mediator.Send(new StartDialogRequest(
+            update,
+            "TestDialog", 
+            update.Message!.From!.Id));
     }
 }

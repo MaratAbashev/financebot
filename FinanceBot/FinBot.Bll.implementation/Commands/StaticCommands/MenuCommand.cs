@@ -7,10 +7,14 @@ using Telegram.Bot.Types;
 namespace FinBot.Bll.Implementation.Commands.StaticCommands;
 
 [SlashCommand("/menu")]
+[TextCommand("Меню")]
 public class MenuCommand(IMediator mediator): IStaticCommand
 {
     public async Task Handle(Update update)
     {
-        await mediator.Send(new StartDialogRequest(update, "MenuDialog", update.Message!.From!.Id));
+        await mediator.Send(new StartDialogRequest(
+            update, 
+            "MenuDialog", 
+            update.Message!.From!.Id));
     }
 }
