@@ -1,4 +1,5 @@
-﻿using FinBot.Bll.Implementation.Requests;
+﻿using FinBot.Bll.Implementation.Dialogs.Definitions;
+using FinBot.Bll.Implementation.Requests;
 using FinBot.Bll.Interfaces.TelegramCommands;
 using FinBot.Domain.Attributes;
 using MediatR;
@@ -14,7 +15,7 @@ public class MenuCommand(IMediator mediator): IStaticCommand
     {
         await mediator.Send(new StartDialogRequest(
             update, 
-            "MenuDialog", 
+            nameof(MenuDialog), 
             update.Message!.From!.Id));
     }
 }

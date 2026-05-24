@@ -1,27 +1,35 @@
-﻿using FinBot.Bll.Implementation.Requests;
-using FinBot.Bll.Interfaces;
+﻿using System.Diagnostics;
+using FinBot.Bll.Implementation.Requests;
 using FinBot.Bll.Interfaces.Dialogs;
+using FinBot.Cache;
 using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
 using FinBot.Domain.Utils;
+using FinBot.Observability.Constants;
+using FinBot.Observability.Metrics;
+using FinBot.Observability.Tracing;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace FinBot.Bll.Implementation.Handlers;
 
-public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> dialogRepository,
+public class DialogHandler(ICacheStorage cacheStorage,
     IEnumerable<IDialogDefinition> dialogs,
-    ITelegramBotClient botClient): IRequestHandler<StartDialogRequest>, IRequestHandler<ProcessDialogRequest>
+    ITelegramBotClient botClient,
+    BusinessMetrics metrics): IRequestHandler<StartDialogRequest>, IRequestHandler<ProcessDialogRequest>
 {
     public async Task Handle(StartDialogRequest request, CancellationToken cancellationToken)
     {
+        using var activity = ActivitySources.FinBot.StartActivity("dialog.start", ActivityKind.Internal);
+        activity?.SetTag(ObservabilityConstants.Tags.DialogType, request.DialogName);
         var dialogDefinition = dialogs.FirstOrDefault(dlg => dlg.DialogName == request.DialogName);
         if (dialogDefinition == null)
             return;
-        var dialogContext = await dialogRepository.FirstOrDefaultAsync(dlg => dlg.UserId == request.UserId) ?? new DialogContext();
-        dialogContext.DialogStorage = new Dictionary<string, object>();
+        var dialogContext = await cacheStorage.GetAsync<DialogContext>(request.UserId.ToString()) ?? new DialogContext();
+        dialogContext.DialogStorage = request.CommonContext ?? new Dictionary<string, object>();
         dialogContext.DialogName = request.DialogName;
         dialogContext.UserId = request.UserId;
         dialogContext.CurrentStep = 0;
@@ -30,16 +38,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
         if (!await TryPrompt(request.UserId, step, request.Update, dialogContext, cancellationToken))
             return;
 
-        if (dialogContext.Id == 0)
-        {
-            await dialogRepository.AddAsync(dialogContext);
-        }
-        else
-        {
-            dialogRepository.Update(dialogContext);
-        }
-        
-        await dialogRepository.SaveChangesAsync();
+        await cacheStorage.SetAsync(request.UserId.ToString(), dialogContext, TimeSpan.FromMinutes(10));
     }
 
     public async Task Handle(ProcessDialogRequest request, CancellationToken cancellationToken)
@@ -49,6 +48,11 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
         var dialogDefinition = dialogs.FirstOrDefault(dlg => dlg.DialogName == dialogContext.DialogName);
         if (dialogDefinition == null)
             return;
+
+        using var activity = ActivitySources.FinBot.StartActivity("dialog.step", ActivityKind.Internal);
+        activity?.SetTag(ObservabilityConstants.Tags.DialogType, dialogContext.DialogName);
+        activity?.SetTag(ObservabilityConstants.Tags.DialogStep, dialogContext.CurrentStep);
+        var stepStopwatch = Stopwatch.StartNew();
         if (update.CallbackQuery is { Data: not null } query
             && query.Data.StartsWith("dlg__back"))
         {
@@ -62,8 +66,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
             dialogContext.PrevStep = prevStep.PrevStepId(dialogContext);
             if (!await TryPrompt(query.From.Id, prevStep, update, dialogContext, cancellationToken))
                 return;
-            dialogRepository.Update(dialogContext);
-            await dialogRepository.SaveChangesAsync();
+            await cacheStorage.SetAsync(dialogContext.UserId.ToString(), dialogContext, TimeSpan.FromMinutes(10));
             return;
         }
 
@@ -77,8 +80,7 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
                 parseMode: ParseMode.MarkdownV2, cancellationToken: cancellationToken);
             if (!await TryPrompt(dialogContext.UserId, handleStep, update, dialogContext, cancellationToken))
                 return;
-            dialogRepository.Update(dialogContext);
-            await dialogRepository.SaveChangesAsync();
+            await cacheStorage.SetAsync(dialogContext.UserId.ToString(), dialogContext, TimeSpan.FromMinutes(10));
             return;
         }
 
@@ -100,15 +102,17 @@ public class DialogHandler(IGenericRepository<DialogContext, int, PDbContext> di
                 (dialogContext.PrevStep, dialogContext.CurrentStep) = (prevStep, dialogContext.PrevStep);
                 return;
             }
-            dialogRepository.Update(dialogContext);
-            await dialogRepository.SaveChangesAsync();
+            await cacheStorage.SetAsync(dialogContext.UserId.ToString(), dialogContext, TimeSpan.FromMinutes(10));
             return;
         }
 
-        if (nextStepId == -1)
+        if (nextStepId == -10)
         {
             await dialogDefinition.OnCompletedAsync(dialogContext.UserId, dialogContext, update, cancellationToken);
-            await dialogRepository.SaveChangesAsync();
+            stepStopwatch.Stop();
+            metrics.DialogCompletionDuration.Record(
+                stepStopwatch.Elapsed.TotalMilliseconds,
+                new KeyValuePair<string, object?>("dialog_type", dialogContext.DialogName));
         }
     }
     

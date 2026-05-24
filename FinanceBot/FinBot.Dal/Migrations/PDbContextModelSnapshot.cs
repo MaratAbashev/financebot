@@ -17,7 +17,7 @@ namespace FinBot.Dal.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "10.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -74,44 +74,108 @@ namespace FinBot.Dal.Migrations
                     b.ToTable("accounts", (string)null);
                 });
 
-            modelBuilder.Entity("FinBot.Domain.Models.DialogContext", b =>
+            modelBuilder.Entity("FinBot.Domain.Models.BankConnection", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CurrentStep")
-                        .HasColumnType("integer")
-                        .HasColumnName("current_step");
-
-                    b.Property<string>("DialogName")
+                    b.Property<string>("BankingApiBaseUrl")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("dialog_name");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("banking_api_base_url");
 
-                    b.Property<string>("DialogStorage")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("dialog_storage");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
-                    b.Property<int>("PrevStep")
-                        .HasColumnType("integer")
-                        .HasColumnName("prev_step");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("refresh_token");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_dialogs");
+                        .HasName("pk_bank_connections");
 
                     b.HasIndex("UserId")
                         .IsUnique()
-                        .HasDatabaseName("ix_dialogs_user_id");
+                        .HasDatabaseName("ix_bank_connections_user_id");
 
-                    b.ToTable("dialogs", (string)null);
+                    b.ToTable("bank_connections", (string)null);
+                });
+
+            modelBuilder.Entity("FinBot.Domain.Models.BankTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("category_name");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("ExternalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("external_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("type");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bank_transactions");
+
+                    b.HasIndex("ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bank_transactions_external_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_bank_transactions_user_id");
+
+                    b.ToTable("bank_transactions", (string)null);
                 });
 
             modelBuilder.Entity("FinBot.Domain.Models.Expense", b =>
@@ -122,10 +186,6 @@ namespace FinBot.Dal.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccountId")
-                        .HasColumnType("integer")
-                        .HasColumnName("account_id");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric")
@@ -139,11 +199,22 @@ namespace FinBot.Dal.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("date");
 
+                    b.Property<Guid?>("GroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("pk_expenses");
 
-                    b.HasIndex("AccountId")
-                        .HasDatabaseName("ix_expenses_account_id");
+                    b.HasIndex("GroupId")
+                        .HasDatabaseName("ix_expenses_group_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_expenses_user_id");
 
                     b.ToTable("expenses", (string)null);
                 });
@@ -188,6 +259,40 @@ namespace FinBot.Dal.Migrations
                         .HasDatabaseName("ix_groups_creator_id");
 
                     b.ToTable("groups", (string)null);
+                });
+
+            modelBuilder.Entity("FinBot.Domain.Models.JoinRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_join_requests");
+
+                    b.HasIndex("GroupId")
+                        .HasDatabaseName("ix_join_requests_group_id");
+
+                    b.HasIndex("UserId", "GroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_join_requests_user_id_group_id");
+
+                    b.ToTable("join_requests", (string)null);
                 });
 
             modelBuilder.Entity("FinBot.Domain.Models.Saving", b =>
@@ -289,14 +394,21 @@ namespace FinBot.Dal.Migrations
 
             modelBuilder.Entity("FinBot.Domain.Models.Expense", b =>
                 {
-                    b.HasOne("FinBot.Domain.Models.Account", "Account")
-                        .WithMany("Expenses")
-                        .HasForeignKey("AccountId")
+                    b.HasOne("FinBot.Domain.Models.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .HasConstraintName("fk_expenses_groups_group_id");
+
+                    b.HasOne("FinBot.Domain.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_expenses_accounts_account_id");
+                        .HasConstraintName("fk_expenses_users_user_id");
 
-                    b.Navigation("Account");
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FinBot.Domain.Models.Group", b =>
@@ -311,6 +423,27 @@ namespace FinBot.Dal.Migrations
                     b.Navigation("Creator");
                 });
 
+            modelBuilder.Entity("FinBot.Domain.Models.JoinRequest", b =>
+                {
+                    b.HasOne("FinBot.Domain.Models.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_join_requests_groups_group_id");
+
+                    b.HasOne("FinBot.Domain.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_join_requests_users_user_id");
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FinBot.Domain.Models.Saving", b =>
                 {
                     b.HasOne("FinBot.Domain.Models.Group", "Group")
@@ -321,11 +454,6 @@ namespace FinBot.Dal.Migrations
                         .HasConstraintName("fk_savings_groups_group_id");
 
                     b.Navigation("Group");
-                });
-
-            modelBuilder.Entity("FinBot.Domain.Models.Account", b =>
-                {
-                    b.Navigation("Expenses");
                 });
 
             modelBuilder.Entity("FinBot.Domain.Models.Group", b =>

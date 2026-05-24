@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FinBot.Bll.Interfaces;
 
-public interface IGenericRepository<T, in TKey, TContext>
+public interface IIGenericRepository<T, in TKey, TContext>
     where T : class, IBusinessEntity<TKey>, new()
     where TKey : struct
     where TContext : DbContext

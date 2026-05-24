@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -13,8 +13,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\FinBot.Bll.Interfaces\FinBot.Bll.Interfaces.csproj" />
+      <ProjectReference Include="..\FinBot.Cache\FinBot.Cache.csproj" />
       <ProjectReference Include="..\FinBot.Dal\FinBot.Dal.csproj" />
       <ProjectReference Include="..\FinBot.Domain\FinBot.Domain.csproj" />
+      <ProjectReference Include="..\FinBot.MinIOS3\FinBot.MinIOS3.csproj" />
+      <ProjectReference Include="..\FinBot.Observability\FinBot.Observability.csproj" />
+      <ProjectReference Include="..\FinBot.Kafka\FinBot.Kafka.csproj" />
     </ItemGroup>
 
 </Project>

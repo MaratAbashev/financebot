@@ -1,8 +1,17 @@
 namespace FinBot.Domain.Models.Enums;
 
+/// <summary>
+/// Тип отчёта
+/// </summary>
 public enum ReportType
 {
-    ExcelTable = 0,
-    CategoryChart = 1,
-    LineChart = 2
+    /// <summary>
+    /// Для конкретного пользователя
+    /// </summary>
+    ForUser = 0,
+
+    /// <summary>
+    /// Для всей группы
+    /// </summary>
+    ForGroup = 1
 }

@@ -1,6 +1,4 @@
-using FinBot.Bll.Interfaces;
 using FinBot.Dal.DbContexts;
-using FinBot.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,23 +9,31 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddPostgresDb(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<PDbContext>(options =>
+        return services.AddDb<PDbContext>(configuration, nameof(PDbContext));
+    }
+
+    public static IServiceCollection AddReplicaDb(this IServiceCollection services, IConfiguration configuration)
+    {
+        return services.AddDb<ReplicaDbContext>(configuration, nameof(ReplicaDbContext));
+    }
+
+    public static IServiceCollection AddReadDb(this IServiceCollection services, IConfiguration configuration)
+    {
+        return services.AddDb<ReadDbContext>(configuration, nameof(ReadDbContext));
+    }
+    
+    private static IServiceCollection AddDb<TDbContext>(this IServiceCollection services, 
+        IConfiguration configuration, string configContextName) 
+        where TDbContext : DbContext
+    {
+        services.AddDbContext<TDbContext>(options =>
         {
-            options.UseNpgsql(configuration.GetConnectionString(nameof(PDbContext)));
+            options.UseNpgsql(configuration.GetConnectionString(configContextName));
             options.UseSnakeCaseNamingConvention();
             options.EnableSensitiveDataLogging();
             options.EnableDetailedErrors();
         });
-        
-        services.AddScoped<IGenericRepository<DialogContext, int, PDbContext>, GenericRepository<DialogContext, int, PDbContext>>();
-        services.AddScoped<IGenericRepository<User, Guid, PDbContext>, GenericRepository<User, Guid, PDbContext>>();
-        services.AddScoped<IGenericRepository<Group, Guid, PDbContext>, GenericRepository<Group, Guid, PDbContext>>();
-        services.AddScoped<IGenericRepository<Saving, Guid, PDbContext>, GenericRepository<Saving, Guid, PDbContext>>();
-        services.AddScoped<IGenericRepository<Expense, int, PDbContext>, GenericRepository<Expense, int, PDbContext>>();
-        services.AddScoped<IGenericRepository<Account, int, PDbContext>, GenericRepository<Account, int, PDbContext>>();
-        
-        services.AddScoped<IUnitOfWork<PDbContext>, UnitOfWork<PDbContext>>();
-        
+
         return services;
     }
 }

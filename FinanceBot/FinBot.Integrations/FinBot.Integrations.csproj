@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -10,16 +10,24 @@
       <PackageReference Include="Confluent.Kafka" Version="2.12.0" />
       <PackageReference Include="EPPlus" Version="8.4.0" />
       <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.3.0" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.11" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.11" />
-      <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.11" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.7" />
+      <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.7" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.7" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.7" />
       <PackageReference Include="Minio" Version="7.0.0" />
       <PackageReference Include="ScottPlot" Version="5.1.57" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\FinBot.Bll.Interfaces\FinBot.Bll.Interfaces.csproj" />
+      <ProjectReference Include="..\FinBot.Cache\FinBot.Cache.csproj" />
       <ProjectReference Include="..\FinBot.Dal\FinBot.Dal.csproj" />
+      <ProjectReference Include="..\FinBot.Observability\FinBot.Observability.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Cache\" />
     </ItemGroup>
 
 </Project>

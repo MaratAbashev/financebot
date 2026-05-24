@@ -14,8 +14,8 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .HasConversion<int>()
             .IsRequired();
 
-        builder.HasOne(e => e.Account)
-            .WithMany(a => a.Expenses)
-            .HasForeignKey(e => e.AccountId);
+        builder.HasOne(e => e.User)
+            .WithMany()
+            .HasForeignKey(e => e.UserId);
     }
 }

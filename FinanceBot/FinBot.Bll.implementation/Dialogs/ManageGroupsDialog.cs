@@ -1,4 +1,4 @@
-using System.Text;
+/*using System.Text;
 using FinBot.Bll.Implementation.Dialogs.Steps;
 using FinBot.Bll.Implementation.Requests;
 using FinBot.Bll.Interfaces;
@@ -16,14 +16,13 @@ using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using User = FinBot.Domain.Models.User;
 
 namespace FinBot.Bll.Implementation.Dialogs;
 
+[Obsolete]
 public class ManageGroupsDialog(
     IGroupService groupService,
-    IGenericRepository<User, Guid, PDbContext> userRepository,
-    IGenericRepository<Group, Guid, PDbContext> groupRepository,
+    PDbContext dbContext,
     IIntegrationsService integrationsService,
     IReportProducer reportProducer,
     ITelegramBotClient botClient,
@@ -49,7 +48,7 @@ public class ManageGroupsDialog(
                 },
                 async ctx =>
                 {
-                    var user = await userRepository.GetAll()
+                    var user = await dbContext.Users
                         .Include(u => u.Accounts)
                         .ThenInclude(u => u.Group)
                         .ThenInclude(g => g.Saving)
@@ -101,7 +100,7 @@ public class ManageGroupsDialog(
                 async ctx =>
                 {
                     var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
-                    var group = await groupRepository.GetAll()
+                    var group = await dbContext.Groups
                         .Include(g => g.Saving)
                         .Include(g => g.Accounts)
                         .ThenInclude(a => a.User)
@@ -158,7 +157,7 @@ public class ManageGroupsDialog(
                 async ctx =>
                 {
                     var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
-                    var group = await groupRepository.GetAll()
+                    var group = await dbContext.Groups
                         .Include(g => g.Accounts)
                             .ThenInclude(a => a.User)
                         .AsNoTracking()
@@ -226,7 +225,7 @@ public class ManageGroupsDialog(
                 async ctx =>
                 {
                     var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
-                    var group = await groupRepository.GetAll()
+                    var group = await dbContext.Groups
                         .Include(g => g.Saving)
                         .AsNoTracking()
                         .FirstAsync(g => g.Id == groupId);
@@ -251,7 +250,7 @@ public class ManageGroupsDialog(
                 async ctx =>
                 {
                     var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
-                    var group = await groupRepository.GetAll()
+                    var group = await dbContext.Groups
                         .Include(g => g.Accounts)
                         .ThenInclude(a => a.User)
                         .AsNoTracking()
@@ -321,7 +320,7 @@ public class ManageGroupsDialog(
                 async ctx =>
                 {
                     var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
-                    var group = await groupRepository.GetAll()
+                    var group = await dbContext.Groups
                         .Include(g => g.Accounts)
                         .ThenInclude(a => a.User)
                         .AsNoTracking()
@@ -346,7 +345,7 @@ public class ManageGroupsDialog(
                 async ctx =>
                 {
                     var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
-                    var group = await groupRepository.GetAll()
+                    var group = await dbContext.Groups
                         .Include(g => g.Accounts)
                         .ThenInclude(a => a.User)
                         .AsNoTracking()
@@ -497,7 +496,7 @@ public class ManageGroupsDialog(
                  var isGroupStatistic = (bool)ctx.DialogStorage!["GetGroupStatistic"];
                  var chooseReportType = (ReportType)(int)ctx.DialogStorage!["ChooseReportType"];
                  var groupId = Guid.Parse((string)ctx.DialogStorage!["chooseGroup"]);
-                 var userId = (await userRepository.FirstOrDefaultAsync(u => u.TelegramId == ctx.UserId))!.Id;
+                 var userId = (await dbContext.Users.FirstOrDefaultAsync(u => u.TelegramId == ctx.UserId))!.Id;
                  ReportGenerationEvent evt;
 
                  switch (chooseReportType)
@@ -548,12 +547,12 @@ public class ManageGroupsDialog(
     {
         var completedOperation = (long)dialogContext.DialogStorage!["chooseAction"];
         var groupId = Guid.Parse((string)dialogContext.DialogStorage!["chooseGroup"]);
-        var group = await groupRepository.GetAll()
+        var group = await dbContext.Groups
             .Include(g => g.Accounts)
                 .ThenInclude(a => a.User)
             .Include(g => g.Saving)
             .FirstOrDefaultAsync(g => g.Id == groupId);
-        var user = await userRepository.FirstOrDefaultAsync(u => u.TelegramId == dialogContext.UserId);
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.TelegramId == dialogContext.UserId);
         
         if (group == null)
         {
@@ -566,7 +565,7 @@ public class ManageGroupsDialog(
                 var targetName = (string)dialogContext.DialogStorage!["targetName"];
                 var targetCost = (decimal)dialogContext.DialogStorage!["targetAmount"];
 
-                var changeGoalResult = await groupService.ChangeGoalAsync(group, targetName, targetCost);
+                var changeGoalResult = await groupService.ChangeGoalAsync(group.Id, targetName, targetCost);
                 
                 if (!changeGoalResult.IsSuccess)
                 {
@@ -594,7 +593,7 @@ public class ManageGroupsDialog(
                     return;
                 }
 
-                var recalculateResult = await groupService.RecalculateMonthlyAllocationsAsync(group, recalculateAllocations);
+                var recalculateResult = await groupService.RecalculateMonthlyAllocationsAsync(group.Id, recalculateAllocations);
                 if (!recalculateResult.IsSuccess)
                 {
                     return;
@@ -625,7 +624,7 @@ public class ManageGroupsDialog(
                     return;
                 }
 
-                var addUserResult = await groupService.AddUserToGroupAsync(group, newUserId, newUserRole,
+                var addUserResult = await groupService.AddUserToGroupAsync(group.Id, newUserId, newUserRole,
                     addUserOldAllocations, addUserAllocation, addUserStrategy);
                 if (!addUserResult.IsSuccess)
                 {
@@ -658,7 +657,7 @@ public class ManageGroupsDialog(
                     return;
                 }
                 
-                var removeUserResult = await groupService.RemoveUserFromGroupAsync(group, userToDeleteId, removeUserRecalculateAllocations);
+                var removeUserResult = await groupService.RemoveUserFromGroupAsync(group.Id, userToDeleteId, removeUserRecalculateAllocations);
                 if (!removeUserResult.IsSuccess)
                 {
                     await botClient.SendMessage(
@@ -688,8 +687,8 @@ public class ManageGroupsDialog(
                     group.SavingStrategy = newSavingStrategy;
                     group.DebtStrategy = newDebtStrategy;
 
-                    groupRepository.Update(group);
-                    await groupRepository.SaveChangesAsync();
+                    dbContext.Groups.Update(group);
+                    await dbContext.SaveChangesAsync();
                     
                     await botClient.SendMessage(
                         chatId,
@@ -767,4 +766,4 @@ public class ManageGroupsDialog(
         }
 
     }
-}
+}*/

@@ -8,30 +8,53 @@ public interface IGroupService
 {
     Task<Result<Group>> CreateGroupAsync(
         string groupName,
-        User creator,
+        long creatorTgId,
         decimal replenishment,
         SavingStrategy groupSavingStrategy,
         SavingStrategy accountSavingStrategy,
         DebtStrategy debtStrategy,
         string? savingTargetName,
         decimal? savingTargetAmount);
-    
+
+    Task<Result<Group>> UpdateGroupAsync(
+        Guid groupId,
+        string? name,
+        decimal? monthlyReplenishment,
+        SavingStrategy? savingStrategy,
+        DebtStrategy? debtStrategy);
+
+    Task<Result<Group>> ToggleSavingAsync(
+        Guid groupId,
+        bool savingFlag);
+
     Task<Result> RecalculateMonthlyAllocationsAsync(
-        Group group,
+        Guid groupId,
         decimal[] allocations);
-    
-    Task<Result<Saving>> ChangeGoalAsync(Group group, string savingTargetName, decimal savingTargetAmount);
-    
+
+    Task<Result<Saving>> ChangeGoalAsync(
+        Guid groupId,
+        string savingTargetName,
+        decimal savingTargetAmount);
+
     Task<Result<Account>> AddUserToGroupAsync(
-        Group group,
-        Guid userId,
+        Guid groupId,
+        long userTgId,
         Role newUserRole,
         decimal[] oldUsersAllocations,
         decimal newUserAllocation,
         SavingStrategy newUserSavingStrategy);
 
     Task<Result> RemoveUserFromGroupAsync(
-        Group group,
+        Guid groupId,
         long userTgId,
         decimal[] leftUsersAllocations);
+
+    Task<Result<IEnumerable<Group>>> GetGroupsAsync();
+
+    Task<Result<Group>> GetGroupByIdAsync(Guid groupId);
+
+    Task<Result<IEnumerable<Group>>> GetUserGroupsAsync(
+        long userTgId,
+        bool adminOnly,
+        CancellationToken cancellationToken = default);
 }

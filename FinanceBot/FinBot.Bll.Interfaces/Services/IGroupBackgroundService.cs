@@ -1,4 +1,3 @@
-using FinBot.Domain.Models;
 using FinBot.Domain.Utils;
 
 namespace FinBot.Bll.Interfaces.Services;

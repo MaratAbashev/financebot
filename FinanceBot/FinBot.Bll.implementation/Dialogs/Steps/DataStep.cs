@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using FinBot.Bll.Implementation.Dialogs.Utils;
 using FinBot.Bll.Interfaces.Dialogs;
 using FinBot.Domain.Models;
 using FinBot.Domain.Utils;
@@ -37,7 +38,7 @@ public abstract class DataStep(
             prompt =  prompt.Replace($"{{{{{key}}}}}", value.ToString());
         }
 
-        prompt = Regex.Replace(prompt, @"[^a-zA-Zа-яА-Я0-9\s]", "");
+        prompt = prompt.EscapeMarkdownV2();
         return Result<string>.Success(prompt);
     }
     

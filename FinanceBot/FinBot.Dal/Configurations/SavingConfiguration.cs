@@ -26,7 +26,9 @@ public class SavingConfiguration : IEntityTypeConfiguration<Saving>
             .HasDefaultValue(true);
 
         builder.Property(s => s.CreatedAt)
-            .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc)); // Для PostgreSQL важно явно указывать UTC
+            .HasConversion(
+                v => v,
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc)); // Для PostgreSQL важно явно указывать UTC
 
         builder.HasOne(s => s.Group)
             .WithOne(g => g.Saving)

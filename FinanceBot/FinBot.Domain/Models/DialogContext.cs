@@ -1,4 +1,5 @@
-﻿using FinBot.Domain.Utils;
+﻿using System.Text.Json.Serialization;
+using FinBot.Domain.Utils;
 
 namespace FinBot.Domain.Models;
 
@@ -9,5 +10,7 @@ public class DialogContext: IBusinessEntity<int>
     public string DialogName { get; set; }
     public int PrevStep { get; set; }
     public int CurrentStep { get; set; }
+    
+    [JsonConverter(typeof(ObjectDictionaryConverter))]
     public Dictionary<string, object>? DialogStorage { get; set; }
 }

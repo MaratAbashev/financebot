@@ -6,15 +6,269 @@
       dockerfile: FinBot.WebApi/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__PDbContext: Host=postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      ConnectionStrings__PDbContext: Host=postgres,replica-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
       Seq__ServerUrl: http://seq
+      MinioOptions__Endpoint: minio:9000
+      MinioOptions__AccessKey: minioadmin
+      MinioOptions__SecretKey: minioadmin
+      Storage__ExcelTablesBucket: excel-tables
+      Storage__BarChartsBucket: bar-charts
+      Storage__LineChartsBucket: line-charts
+      App__Redis__RedisCacheConnection: redis:6379,redis-replica:6379,abortConnect=false,connectRetry=3
+      App__Redis__RedisCachePrefix: finbot
+      Bot__Token: 
+      Kafka__BootstrapServers: kafka-1:9092,kafka-2:9092
+      Kafka__LlmApiGroupId: llm-api-group
+      Kafka__ExcelApiGroupId: excel-api-group
+      Observability__ServiceName: finbot.webapi
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
     ports:
       - "5001:8080"
     depends_on:
+      seq:
+        condition: service_started
+      minio:
+        condition: service_started
+      postgres:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  
+  finbot.cdc:
+    image: finbot.cdc
+    build:
+      context: .
+      dockerfile: FinBot.CDCAsp/Dockerfile
+    container_name: finbot-cdc
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ReplicaDbContext: Host=replica-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      ConnectionStrings__ReadDbContext: Host=readonly-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      Kafka__BootstrapServers: kafka-1:9092,kafka-2:9092
+      Seq__ServerUrl: http://seq
+      Observability__ServiceName: finbot.cdc
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
+    depends_on:
+      postgres:
+        condition: service_started
+      replica-postgres:
+        condition: service_started
+      readonly-postgres:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      connect:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+  finbot.excel:
+    image: finbot.excel
+    build:
+      context: .
+      dockerfile: FinBot.ExcelService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ReadDbContext: Host=readonly-postgres,postgres,replica-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      Seq__ServerUrl: http://seq
+      MinioOptions__Endpoint: minio:9000
+      MinioOptions__AccessKey: minioadmin
+      MinioOptions__SecretKey: minioadmin
+      Storage__ExcelTablesBucket: excel-tables
+      Storage__BarChartsBucket: bar-charts
+      Storage__LineChartsBucket: line-charts
+      Kafka__BootstrapServers: kafka-1:9092,kafka-2:9092
+      Kafka__ExcelGroupId: excel-group
+      Observability__ServiceName: finbot.excel
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
+    ports:
+      - "5004:8080"
+    depends_on:
+      seq:
+        condition: service_started
+      minio:
+        condition: service_started
+      postgres:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  finbot.excel-2:
+    image: finbot.excel
+    build:
+      context: .
+      dockerfile: FinBot.ExcelService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ReadDbContext: Host=readonly-postgres,postgres,replica-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      Seq__ServerUrl: http://seq
+      MinioOptions__Endpoint: minio:9000
+      MinioOptions__AccessKey: minioadmin
+      MinioOptions__SecretKey: minioadmin
+      Storage__ExcelTablesBucket: excel-tables
+      Storage__BarChartsBucket: bar-charts
+      Storage__LineChartsBucket: line-charts
+      Kafka__BootstrapServers: kafka-1:9092,kafka-2:9092
+      Kafka__ExcelGroupId: excel-group
+      Observability__ServiceName: finbot.excel
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
+    ports:
+      - "5005:8080"
+    depends_on:
+      seq:
+        condition: service_started
+      minio:
+        condition: service_started
+      postgres:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      
+  finbot.llm:
+    image: finbot.llm
+    build:
+      context: .
+      dockerfile: FinBot.Llm/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ReadDbContext: Host=readonly-postgres,postgres,replica-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      Seq__ServerUrl: http://seq
+      Kafka__BootstrapServers: kafka-1:9092,kafka-2:9092
+      Kafka__LlmGroupId: llm-group
+      App__Redis__RedisCacheConnection: redis:6379
+      App__Redis__RedisCachePrefix: finbot
+      Observability__ServiceName: finbot.llm
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
+    ports:
+      - "5003:8080"
+    depends_on:
+      seq:
+        condition: service_started
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  finbot.llm-2:
+    image: finbot.llm
+    build:
+      context: .
+      dockerfile: FinBot.Llm/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ReadDbContext: Host=readonly-postgres,postgres,replica-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      Seq__ServerUrl: http://seq
+      Kafka__BootstrapServers: kafka-1:9092,kafka-2:9092
+      Kafka__LlmGroupId: llm-group
+      App__Redis__RedisCacheConnection: redis:6379
+      App__Redis__RedisCachePrefix: finbot
+      Observability__ServiceName: finbot.llm
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
+    ports:
+      - "5006:8080"
+    depends_on:
+      seq:
+        condition: service_started
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      
+  finbot.app:
+    image: finbot.app
+    build:
+      context: .
+      dockerfile: FinBot.App/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__PDbContext: Host=postgres,replica-postgres,readonly-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      Seq__ServerUrl: http://seq
+      Observability__ServiceName: finbot.app
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
+    ports:
+      - "5002:8080"
+    depends_on:
       - seq
-      - minio
       - postgres
-      - kafka
+      - redis
+      - otel-collector
 
   postgres:
     image: postgres:15-alpine
@@ -24,8 +278,41 @@
       - POSTGRES_DB=finbot_db
     ports:
       - "8888:5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_replication_slots=5"
+      - "-c"
+      - "max_wal_senders=5"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+
+  replica-postgres:
+    image: postgres:15-alpine
+    container_name: replica-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=finbot_db
+    ports:
+      - "8889:5432"
+    volumes:
+      - replica_data:/var/lib/postgresql/data
+  
+  readonly-postgres:
+    image: postgres:15-alpine
+    container_name: readonly-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=finbot_db
+    ports:
+      - "8890:5432"
+    volumes:
+      - readonly_data:/var/lib/postgresql/data
       
   seq:
     image: datalust/seq:latest
@@ -50,28 +337,371 @@
     volumes:
       - minio_data:/data
   
-  kafka:
-    image: apache/kafka:latest
-    container_name: kafka
+  redis:
+    image: redis
+    container_name: redis
+    command: [ "redis-server", "--appendonly", "yes" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  redis-replica:
+    image: redis
+    container_name: redis-replica
+    command: [ "redis-server", "--replicaof", "redis", "6379", "--appendonly", "yes" ]
+    ports:
+      - "6380:6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - redis_replica_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+  
+  kafka-1:
+    image: apache/kafka:3.8.0
+    container_name: kafka-1
     ports:
       - "9092:9092"
+      - "9093:9093"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@localhost:9093'
-      
-      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-1:9092,EXTERNAL://localhost:9092'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:9093,2@kafka-2:9093'
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka-1_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      start_period: 20s
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  kafka-2:
+    image: apache/kafka:3.8.0
+    container_name: kafka-2
+    ports:
+      - "9094:9092" 
+      - "9095:9093"  
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-2:9092,EXTERNAL://localhost:9094'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:9093,2@kafka-2:9093'
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka-2_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      start_period: 20s
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  connect:
+    image: debezium/connect:2.6
+    depends_on:
+      - kafka-1
+      - kafka-2
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092
+      GROUP_ID: connect-cluster
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 2
+      OFFSET_STORAGE_REPLICATION_FACTOR: 2
+      STATUS_STORAGE_REPLICATION_FACTOR: 2
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: false
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: false
+    ports:
+      - "8083:8083"
+  
+  debezium-connector-init:
+    image: curlimages/curl:latest
+    container_name: debezium-connector-init
+    depends_on:
+      connect:
+        condition: service_started
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        echo "Waiting for Kafka Connect to be ready..."
+        until curl -s http://connect:8083/connectors > /dev/null 2>&1; do
+          echo "Kafka Connect not ready yet, retrying in 5 seconds..."
+          sleep 5
+        done
+        echo "Kafka Connect is ready!"
+        
+        echo "Creating Debezium PostgreSQL connector..."
+        curl -X POST http://connect:8083/connectors \
+          -H "Content-Type: application/json" \
+          -d '{
+            "name": "postgres-connector",
+            "config": {
+              "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+              "topic.prefix": "postgres",
+              "database.hostname": "postgres",
+              "database.port": "5432",
+              "database.user": "debezium",
+              "database.password": "debezium_pass",
+              "database.dbname": "finbot_db",
+              "plugin.name": "pgoutput",
+              "publication.name": "dbz_publication",
+              "slot.name": "debezium_slot",
+              "table.exclude.list": "public.__EFMigrationsHistory",
+              "schema.include.list": "public",
+              "snapshot.mode": "initial",
+              "topic.creation.default.replication.factor": 2,
+              "topic.creation.default.partitions": 1,
+              "topic.creation.enable": false,
+              "transforms": "Reroute",
+              "transforms.Reroute.type": "io.debezium.transforms.ByLogicalTableRouter",
+              "transforms.Reroute.topic.regex": "postgres.public.(.*)",
+              "transforms.Reroute.topic.replacement": "postgres.all-changes",
+              "transforms.Reroute.key.enforce.uniqueness": false
+            }
+          }'
+        echo "Initialization completed!"
+    restart: "no"
+
+  banking_db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=banking_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - banking_db_data:/var/lib/postgresql/data
+
+  finbot.bankservice:
+    image: finbot.bankservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Kafka__BootstrapServers: kafka-1:9092,kafka-2:9092
+      ConnectionStrings__PDbContext: Host=postgres,replica-postgres,readonly-postgres;Port=5432;Username=postgres;Password=postgres;Database=finbot_db
+      App__Redis__RedisCacheConnection: redis:6379,redis-replica:6379,abortConnect=false,connectRetry=3
+      App__Redis__RedisCachePrefix: finbot
+      Seq__ServerUrl: http://seq
+      Observability__ServiceName: finbot.bankservice
+      Observability__OtlpEndpoint: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=finbot,deployment.environment=development
+      BankingApi__BaseUrl: http://bankingapi:8080
+      BankingApi__RedirectUrl: http://finbot.bankservice:8080
+    ports:
+      - "5286:8080"
+    build:
+      context: .
+      dockerfile: FinBot.BankService/Dockerfile
+    depends_on:
+      seq:
+        condition: service_started
+      minio:
+        condition: service_started
+      postgres:
+        condition: service_started
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      redis:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.110.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8899:8899"
+    depends_on:
+      - jaeger
+      - seq
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: prometheus
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - ./observability/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.8.0
+    container_name: kafka-exporter
+    command: ["--kafka.server=kafka-1:9092", "--kafka.server=kafka-2:9092"]
+    ports:
+      - "9308:9308"
+    depends_on:
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres-exporter-primary:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: postgres-exporter-primary
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres:5432/finbot_db?sslmode=disable"
+    depends_on:
+      - postgres
+
+  postgres-exporter-replica:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: postgres-exporter-replica
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@replica-postgres:5432/finbot_db?sslmode=disable"
+    depends_on:
+      - replica-postgres
+
+  postgres-exporter-readonly:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: postgres-exporter-readonly
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@readonly-postgres:5432/finbot_db?sslmode=disable"
+    depends_on:
+      - readonly-postgres
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.66.0
+    container_name: redis-exporter
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on:
+      - redis
+  
+  bankingapi:
+    image: bankingapi
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=banking_db;Port=5432;Database=banking_db;Username=postgres;Password=postgres
+      Jwt__Secret: your-very-long-secret-key-min-32-chars
+      Jwt__Issuer: BankingApi
+      Jwt__Audience: BankingApiUsers
+      Jwt__AccessTokenExpiryMinutes: "15"
+      Jwt__RefreshTokenExpiryDays: "30"
+      VerificationCode__ExpiryMinutes: "5"
+      VerificationCode__Length: "6"
+      OAuth__BaseUrl: http://localhost:5152
+      OAuth__SessionExpiryMinutes: "10"
+    depends_on:
+      - banking_db
+    ports:
+      - "5152:8080"
+    build:
+      context: .
+      dockerfile: BankingApi.API/Dockerfile
+#  cadvisor:
+#    image: gcr.io/cadvisor/cadvisor:v0.49.1
+#    container_name: cadvisor
+#    privileged: true
+#    volumes:
+#      - /:/rootfs:ro
+#      - /var/run:/var/run:ro
+#      - /sys:/sys:ro
+#      - /var/lib/docker/:/var/lib/docker:ro
+#    ports:
+#      - "8085:8080"
+#
+#  node-exporter:
+#    image: prom/node-exporter:v1.8.2
+#    container_name: node-exporter
+#    pid: "host"
+#    volumes:
+#      - /:/host:ro,rslave
+#    command: ["--path.rootfs=/host"]
+#    ports:
+#      - "9100:9100"
 
 volumes:
   postgres_data:
+  replica_data:
+  readonly_data:
   seq_data:
   minio_data:
+  redis_data:
+  redis_replica_data:
+  kafka-1_data:
+  kafka-2_data:
+  banking_db_data:
+  grafana_data:

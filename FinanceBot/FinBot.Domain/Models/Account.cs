@@ -18,6 +18,4 @@ public class Account : IBusinessEntity<int>
 
     public Guid GroupId { get; set; }
     public Group? Group { get; set; }
-
-    public List<Expense> Expenses { get; set; } = [];
 }

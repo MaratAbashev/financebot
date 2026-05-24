@@ -1,43 +1,58 @@
-using FinBot.Bll.Interfaces;
 using FinBot.Bll.Interfaces.Services;
 using FinBot.Dal.DbContexts;
 using FinBot.Domain.Models;
-using FinBot.Domain.Models.Enums;
 using FinBot.Domain.Utils;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace FinBot.Bll.Implementation.Services;
 
 public class UserService(
-    IGenericRepository<User, Guid, PDbContext> userRepository,
-    IGenericRepository<Account, int, PDbContext> accountRepository,
-    IGenericRepository<Expense, int, PDbContext> expensesRepository,
-    
+    PDbContext dbContext,
     ILogger<UserService> logger) : IUserService
 {
-    public async Task<Result<User?>> GetUserByTgIdAsync(long id)
+    public async Task<Result<User>> GetUserByTgIdAsync(long userId)
     {
         try
         {
-            return Result<User?>.Success(await userRepository.FirstOrDefaultAsync(u => u.TelegramId == id));
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.TelegramId == userId);
+            if (user is null)
+            {
+                logger.LogError("User with tgId {userId} does not exist", userId);
+                return Result<User>.Failure("User not exist", ErrorType.NotFound);
+            }
+
+            return Result<User>.Success(user);
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during get user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
-            return Result<User?>.Failure(ex.Message);
+            logger.LogError(ex,
+                "Something went wrong during get user: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
+            return Result<User>.Failure("Failed to get user");
         }
     }
 
-    public async Task<Result<User?>> GetUserByGuidIdAsync(Guid id)
+    public async Task<Result<User>> GetUserByGuidIdAsync(Guid userId)
     {
         try
         {
-            return Result<User?>.Success(await userRepository.FirstOrDefaultAsync(u => u.Id == id));
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+            {
+                logger.LogError("User {userId} does not exist", userId);
+                return Result<User>.Failure("User not exist", ErrorType.NotFound);
+            }
+
+            return Result<User>.Success(user);
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during get user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
-            return Result<User?>.Failure(ex.Message);
+            logger.LogError(ex,
+                "Something went wrong during get user: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
+            return Result<User>.Failure("Failed to get user");
         }
     }
 
@@ -45,7 +60,7 @@ public class UserService(
     {
         try
         {
-            var isExist = await userRepository.AnyAsync(u => u.TelegramId == tgId);
+            var isExist = await dbContext.Users.AnyAsync(u => u.TelegramId == tgId);
             if (isExist)
             {
                 return Result<User>.Failure("User with such id already exists", ErrorType.Conflict);
@@ -53,20 +68,21 @@ public class UserService(
 
             var newUser = new User
             {
-                Id = Guid.NewGuid(),
                 TelegramId = tgId,
                 DisplayName = displayName
             };
-            
-            await userRepository.AddAsync(newUser);
-            await userRepository.SaveChangesAsync();
+
+            await dbContext.Users.AddAsync(newUser);
+            await dbContext.SaveChangesAsync();
 
             return Result<User>.Success(newUser);
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during create user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
-            return Result<User>.Failure(ex.Message);
+            logger.LogError(ex,
+                "Something went wrong during create user: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
+            return Result<User>.Failure("Failed to create user");
         }
     }
 
@@ -74,57 +90,34 @@ public class UserService(
     {
         try
         {
-            var existedUser = await userRepository.FirstOrDefaultAsync(u => tgId == u.TelegramId);
+            var existedUser = await dbContext.Users.FirstOrDefaultAsync(u => tgId == u.TelegramId);
             if (existedUser != null)
             {
                 return Result<User>.Success(existedUser);
             }
+
             var newUser = new User
             {
-                Id = Guid.NewGuid(),
                 TelegramId = tgId,
                 DisplayName = displayName
             };
-            
-            await userRepository.AddAsync(newUser);
-            await userRepository.SaveChangesAsync();
+
+            await dbContext.Users.AddAsync(newUser);
+            await dbContext.SaveChangesAsync();
 
             return Result<User>.Success(newUser);
         }
-        catch (Exception ex)
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
         {
-            logger.LogError("Something went wrong during get or create user: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
-            return Result<User>.Failure(ex.Message);
-        }
-    }
-
-    public async Task<Result<decimal>> AddExpenseAsync(User user, Guid groupId, decimal amount, ExpenseCategory category)
-    {
-        try
-        {
-            var account = user.Accounts.First(a => a.GroupId == groupId);
-            var newExpense = new Expense
-            {
-                Category = category,
-                Amount = amount,
-                Date = DateTime.Now.ToUniversalTime(),
-                AccountId = account.Id,
-            };
-
-            account.Balance -= amount;
-            account.Expenses.Add(newExpense);
-
-            await expensesRepository.AddAsync(newExpense);
-            accountRepository.Update(account);
-            await accountRepository.SaveChangesAsync();
-            
-            return Result<decimal>.Success(account.Balance);
+            var existedUser = await dbContext.Users.FirstOrDefaultAsync(u => u.TelegramId == tgId);
+            return Result<User>.Success(existedUser!);
         }
         catch (Exception ex)
         {
-            logger.LogError("Something went wrong during add expense: {errorMessage}\nErrorStack{errorStack}", ex.Message, ex.StackTrace);
-            return Result<decimal>.Failure(ex.Message);
+            logger.LogError(ex,
+                "Something went wrong during get or create user: {errorMessage}\nErrorStack{errorStack}",
+                ex.Message, ex.StackTrace);
+            return Result<User>.Failure("Failed to get or create user");
         }
-        
     }
 }

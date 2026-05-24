@@ -3,4 +3,4 @@ using Telegram.Bot.Types;
 
 namespace FinBot.Bll.Implementation.Requests;
 
-public record StartDialogRequest(Update Update, string DialogName, long UserId): IRequest;
+public record StartDialogRequest(Update Update, string DialogName, long UserId, Dictionary<string, object>? CommonContext = null): IRequest;

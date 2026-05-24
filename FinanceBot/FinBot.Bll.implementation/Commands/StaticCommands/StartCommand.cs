@@ -16,7 +16,9 @@ public class StartCommand(ITelegramBotClient botClient,
     private readonly ReplyKeyboardMarkup _markup = ReplyKeyboardBuilder
         .CreateKeyboard("Начать")
         .AddKeyboardRow("Помощь")
-        .AddKeyboardRow("Мой Id")
+        .AddKeyboardRow("Создать группу")
+        .AddKeyboardRow("Меню", "Ввести код приглашение")
+        .AddKeyboardRow("Интеграция с банком", "Распределить траты")
         .BuildKeyboardMarkup();
     public async Task Handle(Update update)
     {

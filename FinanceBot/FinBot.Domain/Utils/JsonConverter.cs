@@ -74,3 +74,39 @@ public sealed class ObjectToInferredTypesConverter : JsonConverter<object>
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
         => JsonSerializer.Serialize(writer, value, value.GetType(), options);
 }
+
+public sealed class ObjectDictionaryConverter : JsonConverter<Dictionary<string, object?>>
+{
+    private static readonly ObjectToInferredTypesConverter ValueConverter = new();
+
+    public override Dictionary<string, object?> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var dict = new Dictionary<string, object?>(StringComparer.Ordinal);
+
+        if (reader.TokenType != JsonTokenType.StartObject)
+            throw new JsonException("Expected StartObject");
+
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
+                return dict;
+
+            var key = reader.GetString()!;
+            reader.Read();
+            dict[key] = ValueConverter.Read(ref reader, typeof(object), options);
+        }
+
+        throw new JsonException("Incomplete JSON object.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, Dictionary<string, object?> value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        foreach (var (k, v) in value)
+        {
+            writer.WritePropertyName(k);
+            ValueConverter.Write(writer, v!, options);
+        }
+        writer.WriteEndObject();
+    }
+}

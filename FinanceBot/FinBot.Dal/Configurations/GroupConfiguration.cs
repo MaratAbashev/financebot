@@ -13,7 +13,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder.Property(g => g.Name)
             .HasMaxLength(255)
             .IsRequired();
-        
+
         builder.Property(g => g.SavingStrategy)
             .HasConversion<int>()
             .IsRequired();
