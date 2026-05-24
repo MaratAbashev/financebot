@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Вход в Banking API</title>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 100px auto; padding: 0 20px; }
+        input { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 100%; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        #step2 { display: none; }
+        .error { color: red; font-size: 14px; }
+    </style>
+</head>
+<body>
+<h2>Вход в Banking API</h2>
+
+<div id="step1">
+    <p>Введите номер телефона для входа</p>
+    <input type="tel" id="phone" placeholder="+79991234567" />
+    <button onclick="sendCode()">Получить код</button>
+    <p class="error" id="error1"></p>
+</div>
+
+<div id="step2">
+    <p>Введите код из SMS</p>
+    <input type="text" id="code" placeholder="123456" maxlength="6" />
+    <button onclick="verify()">Подтвердить</button>
+    <p class="error" id="error2"></p>
+</div>
+
+<script>
+    const authCode = '{{AUTH_CODE}}';
+
+    async function sendCode() {
+        const phone = document.getElementById('phone').value;
+        const res = await fetch('/oauth/login/send-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneNumber: phone })
+        });
+        if (res.ok) {
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+        } else {
+            document.getElementById('error1').textContent = 'Ошибка отправки кода';
+        }
+    }
+
+    async function verify() {
+        const phone = document.getElementById('phone').value;
+        const code = document.getElementById('code').value;
+        const res = await fetch('/oauth/login/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneNumber: phone, code, authCode })
+        });
+        if (res.ok) {
+            document.body.innerHTML = await res.text();
+        } else {
+            document.getElementById('error2').textContent = 'Неверный код';
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <NoWarn>$(NoWarn);NU1903</NoWarn>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Confluent.Kafka" Version="2.14.0" />
+        <PackageReference Include="EPPlus" Version="8.5.4" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
+        <PackageReference Include="Minio" Version="7.0.0" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.11.6" />
+        <PackageReference Include="ScottPlot" Version="5.1.58" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FinBot.Dal\FinBot.Dal.csproj" />
+      <ProjectReference Include="..\FinBot.Domain\FinBot.Domain.csproj" />
+      <ProjectReference Include="..\FinBot.Kafka\FinBot.Kafka.csproj" />
+      <ProjectReference Include="..\FinBot.MinIOS3\FinBot.MinIOS3.csproj" />
+      <ProjectReference Include="..\FinBot.Observability\FinBot.Observability.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\Fonts\DejaVuSans.ttf" />
+    </ItemGroup>
+
+</Project>
